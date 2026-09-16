@@ -226,6 +226,45 @@ def candidate_detail_view(request, candidate_id):
     return render(request, 'tracker/candidate_detail.html', context)
 
 
+def post_detail_view(request, post_id):
+    """Dedicated permalink page to view the exact post in full detail."""
+    post = get_object_or_404(SocialPost.objects.select_related('candidate', 'state_race'), id=post_id)
+    context = {
+        'post': post,
+    }
+    return render(request, 'tracker/post_detail.html', context)
+
+
+@require_GET
+def post_detail_json(request, post_id):
+    """Returns JSON with exact post text, metadata, and sentiment scores for the modal inspector."""
+    post = get_object_or_404(SocialPost.objects.select_related('candidate', 'state_race'), id=post_id)
+    return JsonResponse({
+        'id': post.id,
+        'platform': post.platform,
+        'author_name': post.author_name,
+        'author_handle': post.author_handle,
+        'headline': post.clean_headline,
+        'content': post.clean_content or post.content,
+        'raw_content': post.content,
+        'published_at': post.published_at.strftime('%B %d, %Y at %I:%M %p UTC'),
+        'candidate_name': post.candidate.name if post.candidate else None,
+        'candidate_party': post.candidate.party if post.candidate else None,
+        'candidate_id': post.candidate.id if post.candidate else None,
+        'state_name': post.state_race.state if post.state_race else None,
+        'sentiment_label': post.sentiment_label,
+        'sentiment_score': round(post.sentiment_score, 2),
+        'pos_score': round(post.pos_score * 100, 1),
+        'neu_score': round(post.neu_score * 100, 1),
+        'neg_score': round(post.neg_score * 100, 1),
+        'sentiment_engine': post.sentiment_engine,
+        'likes_count': post.likes_count,
+        'shares_count': post.shares_count,
+        'comments_count': post.comments_count,
+        'working_url': post.working_url,
+    })
+
+
 def export_posts_csv(request):
     """Exports filtered election posts to CSV format."""
     candidate_id = request.GET.get('candidate')

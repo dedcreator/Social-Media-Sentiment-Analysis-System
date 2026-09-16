@@ -408,9 +408,10 @@
                 </div>
 
                 <!-- Clean, Highly Legible Content Section -->
-                <div class="mt-1">
-                    <h3 class="text-base font-semibold text-stone-900 leading-snug tracking-tight font-sans">
-                        {{ post.clean_headline }}
+                <div class="mt-1 cursor-pointer" onclick="openExactPostModal({{ post.id }})">
+                    <h3 class="text-base font-semibold text-stone-900 hover:text-stone-700 leading-snug tracking-tight font-sans flex items-start justify-between gap-2">
+                        <span>{{ post.clean_headline }}</span>
+                        <i class="fa-solid fa-expand text-[11px] text-stone-400 mt-1 opacity-0 group-hover:opacity-100 transition" title="Inspect Exact Post"></i>
                     </h3>
                     {% if post.clean_excerpt and post.clean_excerpt != post.clean_headline %}
                     <p class="text-sm text-stone-600 font-sans leading-relaxed mt-1.5">
@@ -427,30 +428,37 @@
                         <span>Engagement: <strong class="font-semibold text-stone-700">{{ post.likes_count }}</strong> reactions</span>
                     </div>
 
-                    <!-- Working Platform Destination Links -->
+                    <!-- Action Buttons: View Exact Post + Working External Link -->
                     <div class="flex items-center space-x-2">
+                        <!-- View Exact Post Button -->
+                        <button type="button" onclick="openExactPostModal({{ post.id }})" class="inline-flex items-center space-x-1 px-3 py-1 rounded bg-white hover:bg-stone-100 text-stone-900 border border-stone-300 font-mono text-xs font-medium transition shadow-2xs">
+                            <i class="fa-regular fa-eye text-stone-600"></i>
+                            <span>View Exact Post</span>
+                        </button>
+
+                        <!-- Platform Destination Link -->
                         {% if post.platform == 'X' %}
                         <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs tracking-wide transition shadow-2xs">
                             <i class="fa-brands fa-x-twitter"></i>
-                            <span>View Live on X</span>
+                            <span>Live on X</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5 opacity-80"></i>
                         </a>
                         {% elif post.platform == 'Facebook' %}
                         <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-[#1877F2] hover:bg-[#166FE5] text-white font-mono text-xs tracking-wide transition shadow-2xs">
                             <i class="fa-brands fa-facebook"></i>
-                            <span>View on Facebook</span>
+                            <span>Facebook</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5 opacity-80"></i>
                         </a>
                         {% elif post.platform == 'YouTube' %}
                         <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-[#FF0000] hover:bg-[#CC0000] text-white font-mono text-xs tracking-wide transition shadow-2xs">
                             <i class="fa-brands fa-youtube"></i>
-                            <span>Watch on YouTube</span>
+                            <span>YouTube</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5 opacity-80"></i>
                         </a>
                         {% else %}
                         <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 font-mono text-xs tracking-wide transition shadow-2xs">
                             <i class="fa-regular fa-newspaper"></i>
-                            <span>Read Full Article</span>
+                            <span>Source Article</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5 opacity-80"></i>
                         </a>
                         {% endif %}
@@ -462,6 +470,72 @@
                 No reports matching the specified filter criteria.
             </div>
             {% endfor %}
+        </div>
+    </div>
+
+    <!-- Exact Post Inspector Modal (Paper Style) -->
+    <div id="exactPostModal" class="fixed inset-0 z-50 hidden bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white border border-stone-300 rounded-lg max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative font-sans max-h-[90vh] overflow-y-auto">
+            <button onclick="closeExactPostModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-800 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <!-- Modal Header -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200">
+                <div class="flex items-center space-x-2 font-mono text-xs">
+                    <span id="modalPlatformBadge" class="px-2 py-0.5 rounded font-semibold text-[11px] bg-stone-900 text-white">X</span>
+                    <span id="modalAuthorName" class="font-bold text-stone-900">Author</span>
+                    <span class="text-stone-300">•</span>
+                    <span id="modalPublishedAt" class="text-stone-500">Date</span>
+                </div>
+                <span id="modalSentimentBadge" class="stamp-badge px-2.5 py-0.5 rounded">SENTIMENT</span>
+            </div>
+
+            <!-- Headline -->
+            <h2 id="modalHeadline" class="text-xl sm:text-2xl font-serif font-bold text-stone-900 leading-tight"></h2>
+
+            <!-- Candidate & State Banner -->
+            <div id="modalCandidateRow" class="mt-2 text-xs font-mono text-stone-600 hidden">
+                Candidate: <strong id="modalCandidateName" class="text-stone-900"></strong>
+            </div>
+
+            <!-- Exact Full Body -->
+            <div class="my-5 p-5 bg-stone-50 rounded border border-stone-200">
+                <span class="font-mono text-[10px] uppercase tracking-widest text-stone-400 block mb-1.5 font-semibold">Exact Recorded Dispatch:</span>
+                <p id="modalFullContent" class="text-sm sm:text-base text-stone-900 leading-relaxed font-sans whitespace-pre-line select-text"></p>
+            </div>
+
+            <!-- Sentiment Diagnostic Breakdown -->
+            <div class="grid grid-cols-4 gap-2 text-center font-mono text-xs mb-5">
+                <div class="p-2 bg-stone-50 rounded border border-stone-200">
+                    <span class="text-[10px] text-stone-400 block">POLARITY</span>
+                    <span id="modalScore" class="font-bold text-stone-900">0.00</span>
+                </div>
+                <div class="p-2 bg-sage-50 rounded border border-sage-200">
+                    <span class="text-[10px] text-sage-600 block">FAVORABLE</span>
+                    <span id="modalPos" class="font-bold text-sage-700">0%</span>
+                </div>
+                <div class="p-2 bg-stone-50 rounded border border-stone-200">
+                    <span class="text-[10px] text-slateink-600 block">NEUTRAL</span>
+                    <span id="modalNeu" class="font-bold text-slateink-700">0%</span>
+                </div>
+                <div class="p-2 bg-rust-50 rounded border border-rust-200">
+                    <span class="text-[10px] text-rust-600 block">CRITICAL</span>
+                    <span id="modalNeg" class="font-bold text-rust-700">0%</span>
+                </div>
+            </div>
+
+            <!-- Outbound Action Bar -->
+            <div class="pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+                <a id="modalStandaloneLink" href="#" class="text-stone-700 hover:text-stone-900 underline flex items-center space-x-1">
+                    <span>Open Standalone Record</span>
+                    <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                </a>
+                <a id="modalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
+                    <span id="modalExternalBtnText">Open Live Source</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -737,5 +811,79 @@
             }
         });
     });
+
+    // 6. Exact Post Reader Modal Functions
+    const exactPostModal = document.getElementById('exactPostModal');
+
+    function closeExactPostModal() {
+        exactPostModal.classList.add('hidden');
+    }
+
+    // Close on clicking backdrop
+    exactPostModal?.addEventListener('click', function(e) {
+        if (e.target === exactPostModal) {
+            closeExactPostModal();
+        }
+    });
+
+    async function openExactPostModal(postId) {
+        try {
+            const resp = await fetch(`/api/post/${postId}/`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            // Populate fields
+            document.getElementById('modalPlatformBadge').innerText = data.platform;
+            document.getElementById('modalAuthorName').innerText = data.author_name;
+            document.getElementById('modalPublishedAt').innerText = data.published_at;
+            document.getElementById('modalHeadline').innerText = data.headline;
+            document.getElementById('modalFullContent').innerText = data.content;
+            document.getElementById('modalScore').innerText = (data.sentiment_score > 0 ? '+' : '') + data.sentiment_score.toFixed(2);
+            document.getElementById('modalPos').innerText = data.pos_score + '%';
+            document.getElementById('modalNeu').innerText = data.neu_score + '%';
+            document.getElementById('modalNeg').innerText = data.neg_score + '%';
+
+            // Sentiment Badge
+            const badge = document.getElementById('modalSentimentBadge');
+            badge.innerText = `${data.sentiment_label} (${data.sentiment_score.toFixed(2)})`;
+            if (data.sentiment_label === 'Positive') {
+                badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-sage-50 text-sage-700 border border-sage-300 font-semibold";
+            } else if (data.sentiment_label === 'Negative') {
+                badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-rust-50 text-rust-700 border border-rust-300 font-semibold";
+            } else {
+                badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-slateink-50 text-slateink-700 border border-slateink-300 font-semibold";
+            }
+
+            // Candidate row
+            const candRow = document.getElementById('modalCandidateRow');
+            if (data.candidate_name) {
+                candRow.classList.remove('hidden');
+                document.getElementById('modalCandidateName').innerText = `${data.candidate_name} (${data.candidate_party || ''}) - ${data.state_name || ''} State`;
+            } else {
+                candRow.classList.add('hidden');
+            }
+
+            // Links
+            document.getElementById('modalStandaloneLink').href = `/post/${data.id}/`;
+            document.getElementById('modalPostId').innerText = data.id;
+
+            const extLink = document.getElementById('modalExternalLink');
+            const extText = document.getElementById('modalExternalBtnText');
+            extLink.href = data.working_url;
+            if (data.platform === 'X') {
+                extText.innerText = "View Live Stream on X";
+            } else if (data.platform === 'Facebook') {
+                extText.innerText = "View on Facebook";
+            } else if (data.platform === 'YouTube') {
+                extText.innerText = "Watch on YouTube";
+            } else {
+                extText.innerText = "Read Full Source Article";
+            }
+
+            exactPostModal.classList.remove('hidden');
+        } catch (err) {
+            console.error("Failed to load post details:", err);
+        }
+    }
 </script>
 {% endblock %}

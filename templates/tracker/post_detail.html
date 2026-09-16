@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}Dispatch #{{ post.id }} — The 2027 Gubernatorial Dispatch{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Back to Overview -->
+    <div class="flex items-center justify-between font-mono text-xs text-stone-500">
+        <a href="{% url 'tracker:dashboard' %}" class="inline-flex items-center space-x-1.5 text-ink-900 font-semibold hover:underline">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Live Dashboard</span>
+        </a>
+        <span>DISPATCH RECORD #{{ post.id }}</span>
+    </div>
+
+    <!-- Main Exact Post Paper Card -->
+    <article class="paper-card rounded-lg p-6 sm:p-10 space-y-6">
+        <!-- Top Meta Masthead -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-stone-200">
+            <!-- Channel & Author -->
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded font-semibold text-xs
+                    {% if post.platform == 'X' %}bg-stone-900 text-white
+                    {% elif post.platform == 'Facebook' %}bg-blue-600 text-white
+                    {% elif post.platform == 'YouTube' %}bg-red-600 text-white
+                    {% else %}bg-stone-100 text-stone-800 border border-stone-300{% endif %}">
+                    {% if post.platform == 'X' %}<i class="fa-brands fa-x-twitter"></i> <span>X (Twitter)</span>
+                    {% elif post.platform == 'Facebook' %}<i class="fa-brands fa-facebook"></i> <span>Facebook</span>
+                    {% elif post.platform == 'YouTube' %}<i class="fa-brands fa-youtube"></i> <span>YouTube</span>
+                    {% else %}<i class="fa-regular fa-newspaper"></i> <span>News Media</span>{% endif %}
+                </span>
+                <div>
+                    <span class="font-bold text-ink-900 text-sm block">{{ post.author_name }}</span>
+                    {% if post.author_handle %}
+                    <span class="font-mono text-xs text-stone-500">{{ post.author_handle }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Sentiment Stamp & Candidate -->
+            <div class="flex items-center space-x-2">
+                {% if post.candidate %}
+                <a href="{% url 'tracker:candidate_detail' post.candidate.id %}" class="stamp-badge px-2.5 py-1 rounded bg-stone-100 text-ink-800 border border-stone-300 hover:bg-stone-200 transition">
+                    {{ post.candidate.name }} ({{ post.candidate.party }})
+                </a>
+                {% elif post.state_race %}
+                <span class="stamp-badge px-2.5 py-1 rounded bg-stone-100 text-stone-700 border border-stone-300">
+                    {{ post.state_race.state }} State
+                </span>
+                {% endif %}
+
+                <span class="stamp-badge px-3 py-1 rounded text-xs
+                    {% if post.sentiment_label == 'Positive' %}bg-sage-50 text-sage-700 border border-sage-300
+                    {% elif post.sentiment_label == 'Negative' %}bg-rust-50 text-rust-700 border border-rust-300
+                    {% else %}bg-slateink-50 text-slateink-700 border border-slateink-300{% endif %}">
+                    {{ post.sentiment_label }} ({{ post.sentiment_score|floatformat:2 }})
+                </span>
+            </div>
+        </div>
+
+        <!-- Headline -->
+        <h1 class="text-2xl sm:text-3xl font-serif font-bold text-ink-900 leading-tight">
+            {{ post.clean_headline }}
+        </h1>
+
+        <!-- Timestamp -->
+        <div class="font-mono text-xs text-stone-500 flex items-center space-x-2">
+            <i class="fa-regular fa-clock"></i>
+            <span>Published: {{ post.published_at|date:"F j, Y \a\t g:i A T" }}</span>
+        </div>
+
+        <!-- Exact Complete Post Text (Readable Body) -->
+        <div class="py-4 border-y border-stone-100">
+            <h4 class="font-mono uppercase text-[10px] tracking-widest text-stone-400 mb-2 font-semibold">Exact Post Text:</h4>
+            <div class="bg-stone-50/80 p-5 rounded-md border border-stone-200 text-stone-900 text-base leading-relaxed font-sans select-text">
+                {{ post.clean_content|default:post.content }}
+            </div>
+        </div>
+
+        <!-- NLP Sentiment Diagnostic Breakdown -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 font-mono text-xs">
+            <div class="p-3 rounded bg-stone-50 border border-stone-200 text-center">
+                <span class="text-stone-400 block text-[10px] uppercase">Compound Polarity</span>
+                <span class="text-lg font-bold text-ink-900">{{ post.sentiment_score|floatformat:2 }}</span>
+            </div>
+            <div class="p-3 rounded bg-sage-50 border border-sage-200 text-center">
+                <span class="text-sage-600 block text-[10px] uppercase">Favorable Weight</span>
+                <span class="text-lg font-bold text-sage-700">{{ post.pos_score|floatformat:2 }}</span>
+            </div>
+            <div class="p-3 rounded bg-stone-50 border border-stone-200 text-center">
+                <span class="text-slateink-600 block text-[10px] uppercase">Neutral Weight</span>
+                <span class="text-lg font-bold text-slateink-700">{{ post.neu_score|floatformat:2 }}</span>
+            </div>
+            <div class="p-3 rounded bg-rust-50 border border-rust-200 text-center">
+                <span class="text-rust-600 block text-[10px] uppercase">Critical Weight</span>
+                <span class="text-lg font-bold text-rust-700">{{ post.neg_score|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <!-- Working Action Outbound Links -->
+        <div class="pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+            <span class="text-stone-500">Classification Engine: <strong class="text-ink-900">{{ post.sentiment_engine }}</strong></span>
+
+            <div class="flex items-center space-x-2">
+                {% if post.platform == 'X' %}
+                <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
+                    <i class="fa-brands fa-x-twitter"></i>
+                    <span>Open Live Stream on X</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
+                </a>
+                {% elif post.platform == 'Facebook' %}
+                <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-[#1877F2] hover:bg-[#166FE5] text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
+                    <i class="fa-brands fa-facebook"></i>
+                    <span>Open on Facebook</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
+                </a>
+                {% elif post.platform == 'YouTube' %}
+                <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-[#FF0000] hover:bg-[#CC0000] text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
+                    <i class="fa-brands fa-youtube"></i>
+                    <span>Watch on YouTube</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
+                </a>
+                {% else %}
+                <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
+                    <i class="fa-regular fa-newspaper"></i>
+                    <span>Open Full Source Article</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </article>
+
+</div>
+{% endblock %}

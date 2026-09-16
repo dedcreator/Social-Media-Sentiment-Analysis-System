@@ -181,6 +181,20 @@ class ViewsTest(TestCase):
         self.assertTrue(data['success'])
         self.assertEqual(data['result']['label'], 'Positive')
 
+    def test_post_detail_view(self):
+        resp = self.client.get(reverse('tracker:post_detail', args=[self.post.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "DISPATCH RECORD")
+        self.assertContains(resp, "KanoWatcher")
+
+    def test_post_detail_json(self):
+        resp = self.client.get(reverse('tracker:post_detail_json', args=[self.post.id]))
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data['id'], self.post.id)
+        self.assertEqual(data['author_name'], "KanoWatcher")
+        self.assertEqual(data['sentiment_label'], "Positive")
+
     def test_export_csv(self):
         resp = self.client.get(reverse('tracker:export_csv'))
         self.assertEqual(resp.status_code, 200)
