@@ -1,0 +1,772 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}2027 Gubernatorial Election Sentiment Analysis Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top Filter Header -->
+    <div class="glass-card rounded-2xl p-4 sm:p-5 shadow-xl">
+        <form method="GET" action="{% url 'tracker:dashboard' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+            <!-- State Filter -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">State / Race</label>
+                <select name="state" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                    <option value="">All States</option>
+                    {% for st in states_list %}
+                        <option value="{{ st.id }}" {% if selected_state == st.id|stringformat:"s" %}selected{% endif %}>{{ st.state }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Candidate Filter -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Candidate</label>
+                <select name="candidate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                    <option value="">All Candidates</option>
+                    {% for c in candidates_list %}
+                        <option value="{{ c.id }}" {% if selected_candidate == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }} ({{ c.party }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Platform Filter -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Platform</label>
+                <select name="platform" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                    <option value="">All Platforms</option>
+                    {% for p_val, p_lbl in platforms_list %}
+                        <option value="{{ p_val }}" {% if selected_platform == p_val %}selected{% endif %}>{{ p_lbl }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Sentiment Filter -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sentiment</label>
+                <select name="sentiment" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                    <option value="">All Sentiments</option>
+                    <option value="Positive" {% if selected_sentiment == 'Positive' %}selected{% endif %}>Positive Only</option>
+                    <option value="Neutral" {% if selected_sentiment == 'Neutral' %}selected{% endif %}>Neutral Only</option>
+                    <option value="Negative" {% if selected_sentiment == 'Negative' %}selected{% endif %}>Negative Only</option>
+                </select>
+            </div>
+
+            <!-- Time Window -->
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Time Window</label>
+                <select name="days" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                    <option value="7" {% if selected_days == '7' %}selected{% endif %}>Last 7 Days</option>
+                    <option value="14" {% if selected_days == '14' %}selected{% endif %}>Last 14 Days</option>
+                    <option value="30" {% if selected_days == '30' %}selected{% endif %}>Last 30 Days</option>
+                    <option value="all" {% if selected_days == 'all' %}selected{% endif %}>All Time</option>
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2">
+                <button type="submit" class="flex-1 bg-brand-blue hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-xl text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-filter"></i>
+                    <span>Apply</span>
+                </button>
+                <a href="{% url 'tracker:dashboard' %}" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-2 px-3 rounded-xl text-xs transition" title="Clear Filters">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Top KPI Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <!-- Total Posts -->
+        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Posts Tracked</span>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-brand-blue flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-comments"></i>
+                </div>
+            </div>
+            <div class="text-3xl font-black text-white tracking-tight">{{ total_posts }}</div>
+            <p class="text-xs text-slate-400 mt-1">Multi-platform election discourse</p>
+            <div class="mt-3 flex items-center space-x-2 text-[10px] text-slate-400">
+                <span class="inline-flex items-center"><i class="fa-brands fa-x-twitter mr-1"></i> X</span>
+                <span>•</span>
+                <span class="inline-flex items-center text-blue-400"><i class="fa-brands fa-facebook mr-1"></i> FB</span>
+                <span>•</span>
+                <span class="inline-flex items-center text-rose-400"><i class="fa-brands fa-youtube mr-1"></i> YT</span>
+                <span>•</span>
+                <span class="inline-flex items-center text-emerald-400"><i class="fa-solid fa-newspaper mr-1"></i> News</span>
+            </div>
+        </div>
+
+        <!-- Positive Sentiment -->
+        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-500/40 transition">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Positive Reactions</span>
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-face-smile"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline space-x-2">
+                <div class="text-3xl font-black text-emerald-400 tracking-tight">{{ pos_pct }}%</div>
+                <span class="text-xs text-slate-400">({{ pos_count }} posts)</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ pos_pct }}%"></div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">Praise, endorsements & policy trust</p>
+        </div>
+
+        <!-- Negative Sentiment -->
+        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-rose-500/40 transition">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-rose-400">Negative Reactions</span>
+                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-face-frown"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline space-x-2">
+                <div class="text-3xl font-black text-rose-400 tracking-tight">{{ neg_pct }}%</div>
+                <span class="text-xs text-slate-400">({{ neg_count }} posts)</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-rose-500 h-1.5 rounded-full" style="width: {{ neg_pct }}%"></div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">Critiques, grievances & pushback</p>
+        </div>
+
+        <!-- Neutral Sentiment -->
+        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Neutral / News</span>
+                <div class="w-8 h-8 rounded-lg bg-slate-700/30 text-slate-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-face-meh"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline space-x-2">
+                <div class="text-3xl font-black text-slate-300 tracking-tight">{{ neu_pct }}%</div>
+                <span class="text-xs text-slate-400">({{ neu_count }} posts)</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
+                <div class="bg-slate-500 h-1.5 rounded-full" style="width: {{ neu_pct }}%"></div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-2">News updates & factual reports</p>
+        </div>
+
+        <!-- Net Sentiment Index -->
+        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-purple-500/40 transition">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">Net Sentiment Index</span>
+                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-gauge-high"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline space-x-2">
+                <div class="text-3xl font-black {% if net_sentiment_score > 0 %}text-emerald-400{% elif net_sentiment_score < 0 %}text-rose-400{% else %}text-slate-300{% endif %} tracking-tight">
+                    {% if net_sentiment_score > 0 %}+{% endif %}{{ net_sentiment_score }}%
+                </div>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1">Avg Polarity Score: <span class="font-mono text-slate-200">{{ avg_score }}</span></p>
+            <div class="mt-3 text-[10px] text-slate-400">Calculated as: % Positive − % Negative</div>
+        </div>
+    </div>
+
+    <!-- Row 1: Charts (Sentiment Trends Over Time & Polarity Donut) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Sentiment Trends Over Time -->
+        <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-area text-brand-blue"></i>
+                        <span>Sentiment Trends Over Time</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Daily trajectory of positive, neutral, and negative election discourse</p>
+                </div>
+                <div class="flex items-center space-x-2 text-xs">
+                    <span class="flex items-center space-x-1 text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> <span>Positive</span></span>
+                    <span class="flex items-center space-x-1 text-slate-400"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <span>Neutral</span></span>
+                    <span class="flex items-center space-x-1 text-rose-400"><span class="w-2 h-2 rounded-full bg-rose-400"></span> <span>Negative</span></span>
+                </div>
+            </div>
+            <div class="h-72 w-full relative">
+                <canvas id="sentimentTrendsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Sentiment Distribution Donut -->
+        <div class="glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <div class="mb-4">
+                <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie text-emerald-400"></i>
+                    <span>Sentiment Breakdown</span>
+                </h2>
+                <p class="text-xs text-slate-400">Overall ratio across all collected election content</p>
+            </div>
+            <div class="h-60 w-full relative flex items-center justify-center">
+                <canvas id="sentimentDonutChart"></canvas>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center pt-4 border-t border-slate-800 text-xs">
+                <div>
+                    <span class="text-emerald-400 font-bold block">{{ pos_pct }}%</span>
+                    <span class="text-[10px] text-slate-400">Positive</span>
+                </div>
+                <div>
+                    <span class="text-slate-300 font-bold block">{{ neu_pct }}%</span>
+                    <span class="text-[10px] text-slate-400">Neutral</span>
+                </div>
+                <div>
+                    <span class="text-rose-400 font-bold block">{{ neg_pct }}%</span>
+                    <span class="text-[10px] text-slate-400">Negative</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Candidates Sentiment Leaderboard & Top Candidates -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Candidates Sentiment Comparison Chart -->
+        <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-xl">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-users text-purple-400"></i>
+                        <span>Candidate Sentiment Comparison</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Net sentiment index and positive vs negative reactions per candidate</p>
+                </div>
+                <span class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg">Stacked Percentages</span>
+            </div>
+            <div class="h-80 w-full relative">
+                <canvas id="candidateComparisonChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Highlights & Leaderboard Cards -->
+        <div class="space-y-4 flex flex-col justify-between">
+            <!-- Most Positive Candidate -->
+            {% if candidates_summary.most_positive %}
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500 shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center">
+                        <i class="fa-solid fa-crown mr-1.5 text-amber-400"></i> Most Positive Reactions
+                    </span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
+                        +{{ candidates_summary.most_positive.net_sentiment }}% Net
+                    </span>
+                </div>
+                <div class="flex items-center space-x-3 mt-2">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm shadow-md" style="background-color: {{ candidates_summary.most_positive.color }};">
+                        {{ candidates_summary.most_positive.name|slice:":2"|upper }}
+                    </div>
+                    <div>
+                        <a href="{% url 'tracker:candidate_detail' candidates_summary.most_positive.id %}" class="font-bold text-white hover:text-emerald-400 transition text-sm">
+                            {{ candidates_summary.most_positive.name }}
+                        </a>
+                        <p class="text-xs text-slate-400">{{ candidates_summary.most_positive.party }} • {{ candidates_summary.most_positive.state }} State</p>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800">
+                    <span>Positive: <strong class="text-emerald-400">{{ candidates_summary.most_positive.pos_pct }}%</strong></span>
+                    <span>Negative: <strong class="text-rose-400">{{ candidates_summary.most_positive.neg_pct }}%</strong></span>
+                    <span>Mentions: <strong>{{ candidates_summary.most_positive.total }}</strong></span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Most Negative Reactions Candidate -->
+            {% if candidates_summary.most_negative %}
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-rose-500 shadow-xl">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center">
+                        <i class="fa-solid fa-triangle-exclamation mr-1.5 text-rose-400"></i> Most Critical / Negative
+                    </span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">
+                        {{ candidates_summary.most_negative.net_sentiment }}% Net
+                    </span>
+                </div>
+                <div class="flex items-center space-x-3 mt-2">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm shadow-md" style="background-color: {{ candidates_summary.most_negative.color }};">
+                        {{ candidates_summary.most_negative.name|slice:":2"|upper }}
+                    </div>
+                    <div>
+                        <a href="{% url 'tracker:candidate_detail' candidates_summary.most_negative.id %}" class="font-bold text-white hover:text-rose-400 transition text-sm">
+                            {{ candidates_summary.most_negative.name }}
+                        </a>
+                        <p class="text-xs text-slate-400">{{ candidates_summary.most_negative.party }} • {{ candidates_summary.most_negative.state }} State</p>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800">
+                    <span>Negative: <strong class="text-rose-400">{{ candidates_summary.most_negative.neg_pct }}%</strong></span>
+                    <span>Positive: <strong class="text-emerald-400">{{ candidates_summary.most_negative.pos_pct }}%</strong></span>
+                    <span>Mentions: <strong>{{ candidates_summary.most_negative.total }}</strong></span>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Most Discussed Candidate -->
+            {% if candidates_summary.most_discussed %}
+            <div class="glass-card rounded-2xl p-4 shadow-xl flex items-center justify-between">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-brand-blue">Highest Social Buzz</span>
+                    <p class="text-sm font-bold text-white mt-0.5">{{ candidates_summary.most_discussed.name }} ({{ candidates_summary.most_discussed.party }})</p>
+                    <p class="text-xs text-slate-400">{{ candidates_summary.most_discussed.total }} total comments & reactions</p>
+                </div>
+                <a href="{% url 'tracker:candidate_detail' candidates_summary.most_discussed.id %}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 transition">
+                    View Profile <i class="fa-solid fa-arrow-right ml-1 text-slate-400"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Row 3: Word Clouds & Platform Breakdown -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Interactive Word Cloud -->
+        <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-xl">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-cloud text-cyan-400"></i>
+                        <span>Frequently Used Words & Topics</span>
+                    </h2>
+                    <p class="text-xs text-slate-400">Election keywords extracted from public social commentary</p>
+                </div>
+                <!-- Wordcloud Sentiment Filter Tabs -->
+                <div class="inline-flex rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs">
+                    <button class="wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition bg-brand-blue text-white" data-sentiment="all">All Words</button>
+                    <button class="wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-emerald-400" data-sentiment="Positive">Positive Only</button>
+                    <button class="wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-rose-400" data-sentiment="Negative">Negative Only</button>
+                </div>
+            </div>
+
+            <!-- Word Cloud Render Area -->
+            <div id="wordcloudContainer" class="rounded-xl bg-slate-900/90 border border-slate-800 p-3 min-h-[280px] flex items-center justify-center relative overflow-hidden">
+                {% if wordcloud_base64 %}
+                    <img id="wordcloudImage" src="data:image/png;base64,{{ wordcloud_base64 }}" alt="Election Word Cloud" class="max-w-full h-auto rounded-lg shadow-md transition-opacity duration-300">
+                {% else %}
+                    <div class="text-center text-slate-400 py-12">
+                        <i class="fa-solid fa-cloud-moon text-3xl mb-2 text-slate-600"></i>
+                        <p class="text-sm">No word cloud data available for current filter.</p>
+                    </div>
+                {% endif %}
+                <div id="wordcloudSpinner" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
+                    <i class="fa-solid fa-circle-notch animate-spin text-2xl text-cyan-400"></i>
+                </div>
+            </div>
+
+            <!-- Top Word Frequency Pills -->
+            <div class="mt-4">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">High-frequency terms:</span>
+                <div id="wordFreqPills" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                    {% for item in word_frequencies|slice:":25" %}
+                        <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono">
+                            {{ item.text }} <span class="text-cyan-400 font-bold ml-1">{{ item.weight }}</span>
+                        </span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Cross-Platform Breakdown -->
+        <div class="glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+            <div class="mb-4">
+                <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-share-nodes text-amber-400"></i>
+                    <span>Cross-Platform Sentiment</span>
+                </h2>
+                <p class="text-xs text-slate-400">How sentiments compare across channels</p>
+            </div>
+            <div class="h-64 w-full relative">
+                <canvas id="platformBarChart"></canvas>
+            </div>
+            <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center">
+                Covers X/Twitter, Facebook groups, YouTube debates, & News media reactions
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 4: Live Social Media Feed -->
+    <div class="glass-card rounded-2xl p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+            <div>
+                <h2 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-rss text-emerald-400"></i>
+                    <span>Latest Collected Election Posts & Comments</span>
+                </h2>
+                <p class="text-xs text-slate-400">Real-time categorized election content with polarity scores</p>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="text-xs text-slate-400">Showing latest {{ recent_posts|length }} posts</span>
+            </div>
+        </div>
+
+        <!-- Posts Grid / List -->
+        <div class="space-y-3">
+            {% for post in recent_posts %}
+            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition">
+                <div class="flex items-start justify-between gap-3">
+                    <!-- Left: Author & Platform -->
+                    <div class="flex items-center space-x-3">
+                        <!-- Platform Badge Icon -->
+                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm
+                            {% if post.platform == 'X' %}bg-slate-800 text-white
+                            {% elif post.platform == 'Facebook' %}bg-blue-600/20 text-blue-400
+                            {% elif post.platform == 'YouTube' %}bg-rose-600/20 text-rose-400
+                            {% else %}bg-emerald-600/20 text-emerald-400{% endif %}">
+                            {% if post.platform == 'X' %}<i class="fa-brands fa-x-twitter"></i>
+                            {% elif post.platform == 'Facebook' %}<i class="fa-brands fa-facebook"></i>
+                            {% elif post.platform == 'YouTube' %}<i class="fa-brands fa-youtube"></i>
+                            {% else %}<i class="fa-solid fa-newspaper"></i>{% endif %}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <span class="font-bold text-xs text-white">{{ post.author_name }}</span>
+                                <span class="text-xs text-slate-500 font-mono">{{ post.author_handle }}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">
+                                {{ post.published_at|timesince }} ago • {{ post.platform }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Candidate & Sentiment Badges -->
+                    <div class="flex items-center space-x-2">
+                        {% if post.candidate %}
+                        <a href="{% url 'tracker:candidate_detail' post.candidate.id %}" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center space-x-1">
+                            <span class="w-2 h-2 rounded-full" style="background-color: {{ post.candidate.avatar_color }};"></span>
+                            <span>{{ post.candidate.name }}</span>
+                        </a>
+                        {% endif %}
+
+                        <!-- Sentiment Pill -->
+                        <span class="px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1
+                            {% if post.sentiment_label == 'Positive' %}bg-emerald-500/15 text-emerald-400 border border-emerald-500/30
+                            {% elif post.sentiment_label == 'Negative' %}bg-rose-500/15 text-rose-400 border border-rose-500/30
+                            {% else %}bg-slate-500/15 text-slate-300 border border-slate-500/30{% endif %}">
+                            {% if post.sentiment_label == 'Positive' %}<i class="fa-solid fa-arrow-trend-up mr-1 text-[10px]"></i>
+                            {% elif post.sentiment_label == 'Negative' %}<i class="fa-solid fa-arrow-trend-down mr-1 text-[10px]"></i>
+                            {% else %}<i class="fa-solid fa-minus mr-1 text-[10px]"></i>{% endif %}
+                            <span>{{ post.sentiment_label }}</span>
+                            <span class="text-[10px] opacity-75 font-mono">({{ post.sentiment_score|floatformat:2 }})</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Post Text -->
+                <p class="text-xs text-slate-300 mt-3 leading-relaxed">
+                    {{ post.content }}
+                </p>
+
+                <!-- Footer: Engagement & Engine info -->
+                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+                    <div class="flex items-center space-x-4">
+                        <span class="flex items-center space-x-1 hover:text-rose-400"><i class="fa-regular fa-heart"></i> <span>{{ post.likes_count }}</span></span>
+                        <span class="flex items-center space-x-1 hover:text-blue-400"><i class="fa-solid fa-retweet"></i> <span>{{ post.shares_count }}</span></span>
+                        <span class="flex items-center space-x-1 hover:text-emerald-400"><i class="fa-regular fa-comment"></i> <span>{{ post.comments_count }}</span></span>
+                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">Engine: {{ post.sentiment_engine }}</span>
+                    </div>
+                    {% if post.url %}
+                    <a href="{{ post.url }}" target="_blank" class="text-brand-blue hover:text-blue-400 flex items-center space-x-1">
+                        <span>Original Post</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-12 text-slate-400">
+                <i class="fa-solid fa-inbox text-3xl mb-2 text-slate-600"></i>
+                <p>No posts matching the selected filters.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // Parse JSON datasets from Django context
+    const trendsData = {{ trends_json|safe }};
+    const sentimentDistData = {{ sentiment_dist_json|safe }};
+    const candidatesData = {{ candidates_summary_json|safe }};
+    const platformsData = {{ platforms_data_json|safe }};
+
+    // 1. Sentiment Trends Over Time Chart
+    const trendsCtx = document.getElementById('sentimentTrendsChart')?.getContext('2d');
+    if (trendsCtx && trendsData.dates && trendsData.dates.length > 0) {
+        new Chart(trendsCtx, {
+            type: 'line',
+            data: {
+                labels: trendsData.dates,
+                datasets: [
+                    {
+                        label: 'Positive Posts',
+                        data: trendsData.positive,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    },
+                    {
+                        label: 'Neutral Posts',
+                        data: trendsData.neutral,
+                        borderColor: '#94a3b8',
+                        backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    },
+                    {
+                        label: 'Negative Posts',
+                        data: trendsData.negative,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1'
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#64748b', font: { size: 11 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#64748b', font: { size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Sentiment Breakdown Donut Chart
+    const donutCtx = document.getElementById('sentimentDonutChart')?.getContext('2d');
+    if (donutCtx) {
+        new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: sentimentDistData.labels,
+                datasets: [{
+                    data: sentimentDistData.counts,
+                    backgroundColor: ['#10b981', '#64748b', '#ef4444'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '72%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        titleColor: '#f8fafc',
+                        bodyColor: '#cbd5e1'
+                    }
+                }
+            }
+        });
+    }
+
+    // 3. Candidate Sentiment Stacked Bar Chart
+    const candidateCtx = document.getElementById('candidateComparisonChart')?.getContext('2d');
+    if (candidateCtx && candidatesData.length > 0) {
+        const candidateNames = candidatesData.map(c => c.name);
+        const posPcts = candidatesData.map(c => c.pos_pct);
+        const neuPcts = candidatesData.map(c => c.neu_pct);
+        const negPcts = candidatesData.map(c => c.neg_pct);
+
+        new Chart(candidateCtx, {
+            type: 'bar',
+            data: {
+                labels: candidateNames,
+                datasets: [
+                    {
+                        label: 'Positive %',
+                        data: posPcts,
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Neutral %',
+                        data: neuPcts,
+                        backgroundColor: '#64748b',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Negative %',
+                        data: negPcts,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#94a3b8', font: { size: 11 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderWidth: 1,
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        max: 100,
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#64748b', callback: val => val + '%' }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { display: false },
+                        ticks: { color: '#e2e8f0', font: { size: 11, weight: '500' } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. Platform Comparison Bar Chart
+    const platformCtx = document.getElementById('platformBarChart')?.getContext('2d');
+    if (platformCtx && platformsData) {
+        const platKeys = Object.keys(platformsData);
+        const platLabels = platKeys.map(k => platformsData[k].label);
+        const platPos = platKeys.map(k => platformsData[k].positive);
+        const platNeg = platKeys.map(k => platformsData[k].negative);
+
+        new Chart(platformCtx, {
+            type: 'bar',
+            data: {
+                labels: platLabels,
+                datasets: [
+                    {
+                        label: 'Positive',
+                        data: platPos,
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    },
+                    {
+                        label: 'Negative',
+                        data: platNeg,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#94a3b8', font: { size: 10 } }
+                    },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        borderColor: '#334155',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#64748b', font: { size: 10 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 5. Interactive Word Cloud Sentiment Tabs
+    document.querySelectorAll('.wc-tab-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            // Update active styling
+            document.querySelectorAll('.wc-tab-btn').forEach(b => {
+                b.className = "wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white";
+            });
+            this.className = "wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition bg-brand-blue text-white";
+
+            const sentiment = this.dataset.sentiment;
+            const spinner = document.getElementById('wordcloudSpinner');
+            const img = document.getElementById('wordcloudImage');
+            const pillsContainer = document.getElementById('wordFreqPills');
+
+            spinner.classList.remove('hidden');
+
+            try {
+                const params = new URLSearchParams(window.location.search);
+                params.set('sentiment', sentiment);
+                const resp = await fetch(`{% url 'tracker:api_wordcloud' %}?${params.toString()}`);
+                const data = await resp.json();
+
+                if (data.image_base64) {
+                    img.src = `data:image/png;base64,${data.image_base64}`;
+                    img.classList.remove('hidden');
+                } else {
+                    img.classList.add('hidden');
+                }
+
+                // Update frequency pills
+                if (data.word_frequencies && pillsContainer) {
+                    pillsContainer.innerHTML = data.word_frequencies.slice(0, 25).map(item => `
+                        <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono">
+                            ${item.text} <span class="text-cyan-400 font-bold ml-1">${item.weight}</span>
+                        </span>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error("Failed to load wordcloud:", err);
+            } finally {
+                spinner.classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}

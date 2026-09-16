@@ -1,0 +1,21 @@
+# Core Web Framework
+Django>=4.2,<5.0
+psycopg2-binary>=2.9.9
+
+# NLP & Sentiment Analysis
+nltk>=3.8.1
+transformers>=4.40.0
+torch>=2.2.0
+
+# Data Analysis & Visualizations
+wordcloud>=1.9.3
+plotly>=5.20.0
+matplotlib>=3.8.0
+scikit-learn>=1.4.0
+pandas>=1.5.0
+numpy>=1.26.0
+
+# Social Collectors & Utilities
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+tweepy>=4.14.0

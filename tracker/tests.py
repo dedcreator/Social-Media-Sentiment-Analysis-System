@@ -1,0 +1,176 @@
+import json
+from django.test import TestCase, Client
+from django.urls import reverse
+from django.utils import timezone
+from tracker.models import StateRace, Candidate, SocialPost, SocialPlatform, CollectionJob
+from tracker.sentiment_engine import analyze_post_sentiment
+from tracker.collectors import SocialMediaCollector
+from tracker.analytics import (
+    generate_wordcloud_data,
+    get_sentiment_trends,
+    get_candidates_sentiment_summary,
+    get_platform_sentiment_breakdown
+)
+
+
+class SentimentEngineTest(TestCase):
+    def test_positive_sentiment(self):
+        text = "This candidate has delivered phenomenal progress and outstanding economic reforms!"
+        result = analyze_post_sentiment(text, engine='VADER')
+        self.assertEqual(result['label'], 'Positive')
+        self.assertGreater(result['score'], 0.05)
+
+    def test_negative_sentiment(self):
+        text = "A complete disaster of governance with terrible corruption, unpaved roads, and wasted funds."
+        result = analyze_post_sentiment(text, engine='VADER')
+        self.assertEqual(result['label'], 'Negative')
+        self.assertLess(result['score'], -0.05)
+
+    def test_neutral_sentiment(self):
+        text = "The election commission announced polling unit guidelines for the 2027 race."
+        result = analyze_post_sentiment(text, engine='VADER')
+        self.assertEqual(result['label'], 'Neutral')
+
+
+class ModelsAndAnalyticsTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.race = StateRace.objects.create(
+            name="Lagos 2027 Gubernatorial",
+            state="Lagos",
+            year=2027
+        )
+        self.candidate = Candidate.objects.create(
+            name="Gbadebo Rhodes-Vivour",
+            party="LP",
+            state_race=self.race,
+            alias_keywords="GRV, Rhodes-Vivour",
+            avatar_color="#10B981"
+        )
+        self.candidate2 = Candidate.objects.create(
+            name="Tokunbo Abiru",
+            party="APC",
+            state_race=self.race,
+            alias_keywords="Abiru, Tokunbo",
+            avatar_color="#3B82F6"
+        )
+
+        # Create sample posts
+        SocialPost.objects.create(
+            platform=SocialPlatform.X,
+            external_id="post_1",
+            author_name="User1",
+            author_handle="@user1",
+            content="Gbadebo Rhodes-Vivour has a brilliant plan for 2027 #Lagos",
+            candidate=self.candidate,
+            state_race=self.race,
+            sentiment_label='Positive',
+            sentiment_score=0.75,
+            published_at=timezone.now()
+        )
+        SocialPost.objects.create(
+            platform=SocialPlatform.FACEBOOK,
+            external_id="post_2",
+            author_name="User2",
+            author_handle="@user2",
+            content="Tokunbo Abiru failed on promises for 2027 #Lagos",
+            candidate=self.candidate2,
+            state_race=self.race,
+            sentiment_label='Negative',
+            sentiment_score=-0.65,
+            published_at=timezone.now()
+        )
+
+    def test_candidate_keywords(self):
+        keywords = self.candidate.get_keywords_list()
+        self.assertIn("gbadebo rhodes-vivour", keywords)
+        self.assertIn("grv", keywords)
+        self.assertIn("rhodes-vivour", keywords)
+
+    def test_candidate_sentiment_stats(self):
+        stats = self.candidate.get_sentiment_stats()
+        self.assertEqual(stats['total'], 1)
+        self.assertEqual(stats['positive'], 1)
+        self.assertEqual(stats['negative'], 0)
+        self.assertEqual(stats['net_sentiment'], 100.0)
+
+    def test_analytics_helpers(self):
+        qs = SocialPost.objects.all()
+        summary = get_candidates_sentiment_summary(qs)
+        self.assertEqual(len(summary['candidates']), 2)
+        self.assertIsNotNone(summary['most_positive'])
+        self.assertEqual(summary['most_positive']['name'], "Gbadebo Rhodes-Vivour")
+
+        trends = get_sentiment_trends(qs, days=7)
+        self.assertTrue(len(trends['dates']) > 0)
+
+        breakdown = get_platform_sentiment_breakdown(qs)
+        self.assertIn(SocialPlatform.X, breakdown)
+        self.assertEqual(breakdown[SocialPlatform.X]['total'], 1)
+
+        wc_data = generate_wordcloud_data(qs, sentiment_filter='all')
+        self.assertTrue(len(wc_data['word_frequencies']) > 0)
+
+
+class ViewsTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.race = StateRace.objects.create(state="Kano", name="Kano 2027", year=2027)
+        self.cand = Candidate.objects.create(name="Abba Yusuf", party="NNPP", state_race=self.race)
+        self.post = SocialPost.objects.create(
+            platform=SocialPlatform.X,
+            external_id="ext_kano_1",
+            author_name="KanoWatcher",
+            author_handle="@kano",
+            content="Abba Yusuf has done excellent work #KanoDecides2027",
+            candidate=self.cand,
+            state_race=self.race,
+            sentiment_label='Positive',
+            sentiment_score=0.8,
+            published_at=timezone.now()
+        )
+
+    def test_dashboard_view(self):
+        resp = self.client.get(reverse('tracker:dashboard'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "ELECTSENTIMENT")
+        self.assertContains(resp, "Abba Yusuf")
+
+    def test_candidate_detail_view(self):
+        resp = self.client.get(reverse('tracker:candidate_detail', args=[self.cand.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Abba Yusuf")
+
+    def test_collect_ajax_endpoint(self):
+        resp = self.client.post(
+            reverse('tracker:api_collect'),
+            data=json.dumps({'platform': 'X', 'count': 2, 'engine': 'VADER'}),
+            content_type='application/json'
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data['success'])
+        self.assertGreater(data['posts_collected'], 0)
+
+    def test_wordcloud_ajax_endpoint(self):
+        resp = self.client.get(reverse('tracker:api_wordcloud') + '?sentiment=Positive')
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn('word_frequencies', data)
+
+    def test_sentiment_classify_ajax(self):
+        resp = self.client.post(
+            reverse('tracker:api_test_sentiment'),
+            data=json.dumps({'text': 'Great progress in 2027!', 'engine': 'VADER'}),
+            content_type='application/json'
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['result']['label'], 'Positive')
+
+    def test_export_csv(self):
+        resp = self.client.get(reverse('tracker:export_csv'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp['Content-Type'], 'text/csv')
+        self.assertIn(b'Candidate', resp.content)
