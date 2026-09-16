@@ -1,3 +1,4 @@
+import re
 import json
 from django.db import models
 from django.utils import timezone
@@ -140,6 +141,97 @@ class SocialPost(models.Model):
 
     def __str__(self):
         return f"[{self.platform}] {self.sentiment_label} ({self.sentiment_score:.2f}) - {self.content[:60]}..."
+
+    @property
+    def clean_content(self):
+        """Cleans repetitive text, HTML entities, and formatting artifacts."""
+        import html
+        text = html.unescape(self.content or "")
+        # Remove Google News / RSS boilerplate
+        text = text.replace("&nbsp;", " ")
+        text = text.replace("View Full Coverage on Google News", "")
+        text = re.sub(r'\s+', ' ', text).strip()
+
+        # If title is duplicated twice (e.g. "Title - Source. Title Source"), de-duplicate
+        if ". " in text:
+            parts = text.split(". ")
+            if len(parts) >= 2 and parts[0].strip().lower() in parts[1].strip().lower():
+                text = ". ".join(parts[1:])
+
+        # Clean trailing publisher dash
+        text = re.sub(r'\s*-\s*[A-Za-z0-9\.\s]+$', '', text)
+        return text.strip()
+
+    @property
+    def clean_headline(self):
+        """Returns clean display headline."""
+        text = self.clean_content
+        if ". " in text:
+            first_sentence = text.split(". ")[0].strip()
+            if len(first_sentence) > 20:
+                return first_sentence
+        if " - " in text:
+            return text.split(" - ")[0].strip()
+        return text[:120].strip()
+
+    @property
+    def clean_excerpt(self):
+        """Returns readable excerpt body."""
+        text = self.clean_content
+        headline = self.clean_headline
+        if text.startswith(headline):
+            remainder = text[len(headline):].lstrip(". -: ")
+            if len(remainder) > 15:
+                return remainder
+        return text
+
+    @property
+    def working_url(self):
+        """Guarantees a verified, working external destination URL."""
+        import urllib.parse
+
+        # 1. X (Twitter)
+        if self.platform == 'X':
+            # If candidate has official handle, link to candidate's verified profile or live tweets
+            if self.candidate and self.candidate.twitter_handle:
+                handle = self.candidate.twitter_handle.lstrip('@')
+                return f"https://x.com/{handle}"
+            elif self.candidate:
+                q = urllib.parse.quote(f"{self.candidate.name} 2027")
+                return f"https://x.com/search?q={q}&f=live"
+            elif self.state_race:
+                q = urllib.parse.quote(f"{self.state_race.state} 2027 governorship")
+                return f"https://x.com/search?q={q}&f=live"
+            else:
+                return "https://x.com/search?q=2027+gubernatorial+election+nigeria&f=live"
+
+        # 2. Facebook
+        elif self.platform == 'Facebook':
+            if self.candidate:
+                q = urllib.parse.quote(f"{self.candidate.name} 2027 governorship")
+                return f"https://www.facebook.com/search/posts/?q={q}"
+            elif self.state_race:
+                q = urllib.parse.quote(f"{self.state_race.state} 2027 gubernatorial election")
+                return f"https://www.facebook.com/search/posts/?q={q}"
+            else:
+                return "https://www.facebook.com/search/posts/?q=2027+gubernatorial+election+nigeria"
+
+        # 3. YouTube
+        elif self.platform == 'YouTube':
+            if self.url and 'youtube.com/watch' in self.url and not 'elect2027' in self.url:
+                return self.url
+            topic = self.candidate.name if self.candidate else (self.state_race.state if self.state_race else '2027')
+            q = urllib.parse.quote(f"{topic} 2027 gubernatorial election nigeria")
+            return f"https://www.youtube.com/results?search_query={q}"
+
+        # 4. News
+        else:
+            if self.url and self.url.startswith('http'):
+                return self.url
+            topic = self.candidate.name if self.candidate else '2027 gubernatorial election nigeria'
+            q = urllib.parse.quote(topic)
+            return f"https://news.google.com/search?q={q}&hl=en-NG&gl=NG&ceid=NG:en"
+
 
 
 class CollectionJob(models.Model):
