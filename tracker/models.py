@@ -192,11 +192,8 @@ class SocialPost(models.Model):
 
         # 1. X (Twitter)
         if self.platform == 'X':
-            # If candidate has official handle, link to candidate's verified profile or live tweets
-            if self.candidate and self.candidate.twitter_handle:
-                handle = self.candidate.twitter_handle.lstrip('@')
-                return f"https://x.com/{handle}"
-            elif self.candidate:
+            # Link to live search stream to guarantee it never hits a 404 'account does not exist' error
+            if self.candidate:
                 q = urllib.parse.quote(f"{self.candidate.name} 2027")
                 return f"https://x.com/search?q={q}&f=live"
             elif self.state_race:
