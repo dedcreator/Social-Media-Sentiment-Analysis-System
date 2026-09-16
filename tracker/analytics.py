@@ -1,10 +1,12 @@
 import io
 import re
+import random
 import base64
 from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Count, Avg, Q
 from django.db.models.functions import TruncDate
+from wordcloud import WordCloud
 from .models import SocialPost, Candidate, StateRace, SocialPlatform
 
 # Stopwords for election discourse
@@ -18,7 +20,8 @@ COMMON_STOPWORDS = {
     'also', 'did', 'many', 'before', 'must', 'through', 'back', 'years', 'where', 'much', 'your',
     'way', 'well', 'down', 'should', 'because', 'each', 'just', 'those', 'people', 'mr', 'how', 'too',
     'little', 'state', 'candidate', 'election', '2027', 'gubernatorial', 'https', 'http', 'com', 'rt',
-    'amp', 'vote', 'voting', 'governor', 'decides2027', 'decides', 'today', 'see', 'watch', 'one'
+    'amp', 'vote', 'voting', 'governor', 'decides2027', 'decides', 'today', 'see', 'watch', 'one',
+    'nbsp', 'href', 'font', 'span', 'html', 'target', 'blank', 'rel', 'strong', 'said', 'says', 'told'
 }
 
 def generate_wordcloud_data(posts_queryset, sentiment_filter: str = 'all', max_words: int = 80):
@@ -57,25 +60,26 @@ def generate_wordcloud_data(posts_queryset, sentiment_filter: str = 'all', max_w
     image_base64 = None
     if word_freq_dict:
         try:
-            from wordcloud import WordCloud
-            # Color maps based on sentiment
-            colormap = 'viridis'
-            if sentiment_filter == 'Positive':
-                colormap = 'Greens'
-            elif sentiment_filter == 'Negative':
-                colormap = 'Reds'
-            elif sentiment_filter == 'Neutral':
-                colormap = 'Blues'
+            # Paper / Editorial ink palettes
+            def paper_color_func(word, font_size, position, orientation, random_state=None, **kwargs):
+                if sentiment_filter == 'Positive':
+                    colors = ["#1b4332", "#2d6a4f", "#40916c", "#52b788", "#1e5e3a", "#14532d"]
+                elif sentiment_filter == 'Negative':
+                    colors = ["#7f1d1d", "#991b1b", "#b91c1c", "#dc2626", "#881337", "#9f1239"]
+                else:
+                    colors = ["#1c1917", "#292524", "#44403c", "#57534e", "#1e3a8a", "#0f172a"]
+                import random
+                return random.choice(colors)
 
             wc = WordCloud(
                 width=800,
-                height=420,
-                background_color='#0f172a',  # modern dark slate
-                colormap=colormap,
+                height=400,
+                background_color='#FAF9F6',  # tactile warm paper
+                color_func=paper_color_func,
                 stopwords=COMMON_STOPWORDS,
                 max_words=max_words,
                 contour_width=0,
-                prefer_horizontal=0.85
+                prefer_horizontal=0.9
             ).generate_from_frequencies(word_freq_dict)
 
             img_buffer = io.BytesIO()

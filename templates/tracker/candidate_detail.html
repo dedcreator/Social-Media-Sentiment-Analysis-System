@@ -1,166 +1,162 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ candidate.name }} - 2027 Gubernatorial Sentiment Profile{% endblock %}
+{% block title %}{{ candidate.name }} — Political Dossier & Sentiment Analysis{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-8">
 
-    <!-- Candidate Header Card -->
-    <div class="glass-card rounded-2xl p-6 shadow-xl">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div class="flex items-center space-x-4">
-                <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg" style="background-color: {{ candidate.avatar_color }};">
-                    {{ candidate.name|slice:":2"|upper }}
+    <!-- Candidate Dossier Header (Paper Style) -->
+    <div class="paper-card rounded-lg p-6 sm:p-8">
+        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div>
+                <div class="flex items-center space-x-2 font-mono text-xs text-stone-500 uppercase tracking-widest mb-2">
+                    <span>POLITICAL DOSSIER</span>
+                    <span>•</span>
+                    <span>{{ candidate.state_race.state }} STATE 2027</span>
+                    <span>•</span>
+                    <span class="text-stone-700 font-semibold">{{ candidate.party }}</span>
                 </div>
-                <div>
-                    <div class="flex items-center space-x-3">
-                        <h1 class="text-2xl font-black text-white tracking-tight">{{ candidate.name }}</h1>
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">
-                            {{ candidate.party }}
-                        </span>
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                            {{ candidate.state_race.state }} State 2027
-                        </span>
-                    </div>
-                    <p class="text-xs text-slate-400 mt-1 max-w-2xl">
-                        {{ candidate.bio|default:"Gubernatorial aspirant for the 2027 election cycle." }}
-                    </p>
-                    {% if candidate.twitter_handle %}
-                    <div class="mt-2 flex items-center space-x-2 text-xs text-slate-400">
-                        <i class="fa-brands fa-x-twitter text-slate-300"></i>
-                        <span class="font-mono text-cyan-400">{{ candidate.twitter_handle }}</span>
-                    </div>
-                    {% endif %}
+                <h1 class="font-serif text-3xl sm:text-4xl font-bold text-ink-900 tracking-tight">
+                    {{ candidate.name }}
+                </h1>
+                <p class="font-serif italic text-base text-ink-500 mt-2 max-w-2xl leading-relaxed">
+                    {{ candidate.bio|default:"2027 Gubernatorial aspirant with ongoing monitoring of speeches, declarations, press commentary, and public perception." }}
+                </p>
+                {% if candidate.twitter_handle %}
+                <div class="mt-3 flex items-center space-x-2 font-mono text-xs text-stone-600">
+                    <i class="fa-brands fa-x-twitter text-stone-700"></i>
+                    <span>Official Handle: <strong class="text-ink-900">{{ candidate.twitter_handle }}</strong></span>
                 </div>
+                {% endif %}
             </div>
 
             <div class="flex items-center space-x-3">
-                <a href="{% url 'tracker:dashboard' %}?candidate={{ candidate.id }}" class="px-4 py-2 rounded-xl bg-brand-blue hover:bg-blue-600 text-white text-xs font-medium transition shadow-md shadow-blue-500/20">
-                    <i class="fa-solid fa-filter mr-1.5"></i> Filter Dashboard by Candidate
+                <a href="{% url 'tracker:dashboard' %}?candidate={{ candidate.id }}" class="px-4 py-2 rounded bg-stone-900 text-white font-mono text-xs uppercase tracking-wider hover:bg-stone-800 transition shadow-sm">
+                    Filter Dispatch For Candidate
                 </a>
-                <a href="{% url 'tracker:dashboard' %}" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
-                    <i class="fa-solid fa-arrow-left mr-1"></i> Back to Overview
+                <a href="{% url 'tracker:dashboard' %}" class="px-3.5 py-2 rounded border border-stone-300 font-mono text-xs uppercase text-ink-700 hover:bg-stone-50 transition">
+                    Back to Dispatch
                 </a>
             </div>
         </div>
     </div>
 
-    <!-- Metrics Row -->
+    <!-- Candidate Metric Ledger (Paper Style) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Total Mentions -->
-        <div class="glass-card rounded-2xl p-5">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Mentions</span>
-            <div class="text-3xl font-black text-white mt-1">{{ total_mentions }}</div>
-            <p class="text-xs text-slate-500 mt-1">Across monitored platforms</p>
+        <!-- Mentions -->
+        <div class="paper-card rounded-lg p-5">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-stone-500 block mb-1">Total Mentions</span>
+            <div class="font-serif text-4xl text-ink-900 font-semibold tracking-tight">{{ total_mentions }}</div>
+            <p class="font-serif italic text-xs text-ink-500 mt-1">Recorded press & social dispatches</p>
         </div>
 
-        <!-- Positive % -->
-        <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500">
-            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Positive Reactions</span>
-            <div class="text-3xl font-black text-emerald-400 mt-1">{{ stats.pos_pct }}%</div>
-            <p class="text-xs text-slate-500 mt-1">{{ stats.positive }} positive posts</p>
+        <!-- Favorable -->
+        <div class="paper-card rounded-lg p-5 border-t-2 border-t-sage-600">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-sage-600 block mb-1">Favorable Proportion</span>
+            <div class="font-serif text-4xl text-sage-700 font-semibold tracking-tight">{{ stats.pos_pct }}%</div>
+            <p class="font-mono text-xs text-stone-500 mt-1">{{ stats.positive }} recorded positive items</p>
         </div>
 
-        <!-- Negative % -->
-        <div class="glass-card rounded-2xl p-5 border-l-4 border-rose-500">
-            <span class="text-xs font-semibold uppercase tracking-wider text-rose-400">Negative Reactions</span>
-            <div class="text-3xl font-black text-rose-400 mt-1">{{ stats.neg_pct }}%</div>
-            <p class="text-xs text-slate-500 mt-1">{{ stats.negative }} negative posts</p>
+        <!-- Critical -->
+        <div class="paper-card rounded-lg p-5 border-t-2 border-t-rust-600">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-rust-600 block mb-1">Critical Proportion</span>
+            <div class="font-serif text-4xl text-rust-700 font-semibold tracking-tight">{{ stats.neg_pct }}%</div>
+            <p class="font-mono text-xs text-stone-500 mt-1">{{ stats.negative }} recorded critical items</p>
         </div>
 
-        <!-- Neutral % -->
-        <div class="glass-card rounded-2xl p-5 border-l-4 border-slate-500">
-            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Neutral Mentions</span>
-            <div class="text-3xl font-black text-slate-300 mt-1">{{ stats.neu_pct }}%</div>
-            <p class="text-xs text-slate-500 mt-1">{{ stats.neutral }} neutral posts</p>
+        <!-- Neutral -->
+        <div class="paper-card rounded-lg p-5 border-t-2 border-t-slateink-600">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-slateink-600 block mb-1">Neutral Reporting</span>
+            <div class="font-serif text-4xl text-slateink-700 font-semibold tracking-tight">{{ stats.neu_pct }}%</div>
+            <p class="font-mono text-xs text-stone-500 mt-1">{{ stats.neutral }} factual/news items</p>
         </div>
 
-        <!-- Net Sentiment -->
-        <div class="glass-card rounded-2xl p-5 border-l-4 border-purple-500">
-            <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">Net Sentiment</span>
-            <div class="text-3xl font-black {% if stats.net_sentiment > 0 %}text-emerald-400{% elif stats.net_sentiment < 0 %}text-rose-400{% else %}text-slate-300{% endif %} mt-1">
+        <!-- Net Mood -->
+        <div class="paper-card rounded-lg p-5 border-t-2 border-t-stone-800">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-ink-800 block mb-1">Net Mood Index</span>
+            <div class="font-serif text-4xl font-semibold {% if stats.net_sentiment > 0 %}text-sage-700{% elif stats.net_sentiment < 0 %}text-rust-700{% else %}text-ink-800{% endif %} tracking-tight">
                 {% if stats.net_sentiment > 0 %}+{% endif %}{{ stats.net_sentiment }}%
             </div>
-            <p class="text-xs text-slate-500 mt-1">Avg Score: {{ stats.avg_score }}</p>
+            <p class="font-mono text-xs text-stone-500 mt-1">Avg Polarity: {{ stats.avg_score }}</p>
         </div>
     </div>
 
     <!-- Charts Row: Trend & Word Cloud -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Sentiment Trend Over Time -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-            <div class="mb-4">
-                <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-chart-line text-brand-blue"></i>
-                    <span>Sentiment Trajectory for {{ candidate.name }}</span>
-                </h2>
-                <p class="text-xs text-slate-400">Daily breakdown of sentiment over time</p>
+        <!-- Sentiment Trajectory -->
+        <div class="paper-card rounded-lg p-6 flex flex-col justify-between">
+            <div class="pb-3 mb-4 border-b border-stone-200">
+                <h2 class="font-serif text-lg font-semibold text-ink-900">Sentiment Trajectory</h2>
+                <p class="font-serif italic text-xs text-ink-500">Historical trend of favorable vs critical reports for {{ candidate.name }}</p>
             </div>
             <div class="h-64 w-full relative">
                 <canvas id="candidateTrendChart"></canvas>
             </div>
+            <div class="pt-3 border-t border-stone-200 font-mono text-[10px] text-stone-400 text-right">
+                CHART 4.1 • CANDIDATE TIME-SERIES
+            </div>
         </div>
 
-        <!-- Candidate Specific Word Cloud -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-            <div class="mb-4">
-                <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-cloud text-cyan-400"></i>
-                    <span>Associated Keywords & Discourse</span>
-                </h2>
-                <p class="text-xs text-slate-400">Most frequent words occurring in posts mentioning {{ candidate.name }}</p>
+        <!-- Candidate Word Cloud -->
+        <div class="paper-card rounded-lg p-6 flex flex-col justify-between">
+            <div class="pb-3 mb-4 border-b border-stone-200">
+                <h2 class="font-serif text-lg font-semibold text-ink-900">Associated Lexicon & Context</h2>
+                <p class="font-serif italic text-xs text-ink-500">Words frequently associated with {{ candidate.name }}</p>
             </div>
-            <div class="rounded-xl bg-slate-900 border border-slate-800 p-2 min-h-[220px] flex items-center justify-center">
+            <div class="rounded border border-stone-200 bg-[#FAF9F6] p-4 min-h-[220px] flex items-center justify-center">
                 {% if wordcloud_base64 %}
-                    <img src="data:image/png;base64,{{ wordcloud_base64 }}" alt="{{ candidate.name }} Word Cloud" class="max-w-full h-auto rounded-lg">
+                    <img src="data:image/png;base64,{{ wordcloud_base64 }}" alt="{{ candidate.name }} Word Cloud" class="max-w-full h-auto rounded">
                 {% else %}
-                    <p class="text-xs text-slate-500">No word cloud available yet.</p>
+                    <p class="font-serif italic text-xs text-stone-400">No word cloud data available for this candidate.</p>
                 {% endif %}
             </div>
-            <!-- Keywords pills -->
-            <div class="flex flex-wrap gap-1 mt-3">
+            <div class="flex flex-wrap gap-1.5 mt-3">
                 {% for item in word_frequencies|slice:":12" %}
-                    <span class="px-2 py-0.5 rounded text-[11px] bg-slate-800 text-slate-300 font-mono">
-                        {{ item.text }} ({{ item.weight }})
+                    <span class="px-2 py-0.5 rounded border border-stone-200 bg-stone-50 font-mono text-[11px] text-ink-800">
+                        {{ item.text }} <strong class="text-stone-500 font-normal">({{ item.weight }})</strong>
                     </span>
                 {% endfor %}
             </div>
         </div>
     </div>
 
-    <!-- Recent Posts Mentioning Candidate -->
-    <div class="glass-card rounded-2xl p-6 shadow-xl">
-        <h2 class="text-base font-bold text-white mb-4 flex items-center space-x-2">
-            <i class="fa-solid fa-comments text-emerald-400"></i>
-            <span>Recent Posts Mentioning {{ candidate.name }}</span>
-        </h2>
-        <div class="space-y-3">
+    <!-- Related Dispatches (Paper Style) -->
+    <div class="paper-card rounded-lg p-6">
+        <div class="pb-4 mb-4 border-b border-stone-200">
+            <h2 class="font-serif text-xl font-bold text-ink-900">Recorded Dispatches Mentioning {{ candidate.name }}</h2>
+            <p class="font-serif italic text-xs text-ink-500">Direct reports and press mentions from verified feeds</p>
+        </div>
+        <div class="divide-y divide-stone-200">
             {% for post in recent_posts %}
-            <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                <div class="flex items-center justify-between text-xs">
+            <article class="py-4 hover:bg-stone-50/70 transition px-2 rounded">
+                <div class="flex items-center justify-between font-mono text-xs mb-1.5">
                     <div class="flex items-center space-x-2">
-                        <span class="font-bold text-slate-200">{{ post.author_name }}</span>
-                        <span class="text-slate-500 font-mono">{{ post.author_handle }}</span>
-                        <span class="text-slate-600">•</span>
-                        <span class="text-slate-400">{{ post.platform }}</span>
+                        <span class="font-bold text-ink-900 uppercase">{{ post.author_name }}</span>
+                        <span class="text-stone-300">•</span>
+                        <span class="text-stone-500">{{ post.published_at|date:"M d, Y H:i" }}</span>
+                        <span class="text-stone-300">•</span>
+                        <span class="text-stone-600">[{{ post.platform }}]</span>
                     </div>
-                    <span class="px-2 py-0.5 rounded-full font-bold text-[10px]
-                        {% if post.sentiment_label == 'Positive' %}bg-emerald-500/20 text-emerald-400
-                        {% elif post.sentiment_label == 'Negative' %}bg-rose-500/20 text-rose-400
-                        {% else %}bg-slate-500/20 text-slate-300{% endif %}">
+                    <span class="stamp-badge px-2.5 py-0.5 rounded
+                        {% if post.sentiment_label == 'Positive' %}bg-sage-50 text-sage-700 border border-sage-200
+                        {% elif post.sentiment_label == 'Negative' %}bg-rust-50 text-rust-700 border border-rust-200
+                        {% else %}bg-slateink-50 text-slateink-700 border border-slateink-200{% endif %}">
                         {{ post.sentiment_label }} ({{ post.sentiment_score|floatformat:2 }})
                     </span>
                 </div>
-                <p class="text-xs text-slate-300 mt-2">{{ post.content }}</p>
-                <div class="mt-2 text-[10px] text-slate-500 flex items-center justify-between">
-                    <span>{{ post.published_at|date:"M d, Y H:i" }}</span>
-                    {% if post.url %}
-                    <a href="{{ post.url }}" target="_blank" class="text-blue-400 hover:underline">View Post</a>
-                    {% endif %}
+                <p class="font-serif text-sm text-ink-800 leading-relaxed">
+                    “{{ post.content }}”
+                </p>
+                {% if post.url %}
+                <div class="mt-2 text-right">
+                    <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer" class="font-mono text-[11px] text-ink-900 font-semibold hover:underline">
+                        Read Full Report <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5"></i>
+                    </a>
                 </div>
-            </div>
+                {% endif %}
+            </article>
             {% empty %}
-            <p class="text-xs text-slate-400 py-6 text-center">No posts found for this candidate.</p>
+            <p class="font-serif italic text-sm text-stone-500 py-6 text-center">No dispatches recorded for this candidate yet.</p>
             {% endfor %}
         </div>
     </div>
@@ -170,6 +166,10 @@
 
 {% block extra_scripts %}
 <script>
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = "#52525B";
+
     const trends = {{ trends_json|safe }};
     const ctx = document.getElementById('candidateTrendChart')?.getContext('2d');
     if (ctx && trends.dates && trends.dates.length > 0) {
@@ -179,20 +179,22 @@
                 labels: trends.dates,
                 datasets: [
                     {
-                        label: 'Positive',
+                        label: 'Favorable',
                         data: trends.positive,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderColor: '#266A46',
+                        backgroundColor: 'rgba(38, 106, 70, 0.08)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.25,
+                        borderWidth: 1.8
                     },
                     {
-                        label: 'Negative',
+                        label: 'Critical',
                         data: trends.negative,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        borderColor: '#9E2A2B',
+                        backgroundColor: 'rgba(158, 42, 43, 0.08)',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.25,
+                        borderWidth: 1.8
                     }
                 ]
             },
@@ -200,8 +202,8 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }
+                    x: { grid: { color: '#F2F0EB' } },
+                    y: { grid: { color: '#F2F0EB' } }
                 }
             }
         });

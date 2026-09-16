@@ -133,7 +133,7 @@ class ViewsTest(TestCase):
     def test_dashboard_view(self):
         resp = self.client.get(reverse('tracker:dashboard'))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, "ELECTSENTIMENT")
+        self.assertContains(resp, "The Gubernatorial")
         self.assertContains(resp, "Abba Yusuf")
 
     def test_candidate_detail_view(self):
@@ -142,15 +142,27 @@ class ViewsTest(TestCase):
         self.assertContains(resp, "Abba Yusuf")
 
     def test_collect_ajax_endpoint(self):
-        resp = self.client.post(
-            reverse('tracker:api_collect'),
-            data=json.dumps({'platform': 'X', 'count': 2, 'engine': 'VADER'}),
-            content_type='application/json'
-        )
-        self.assertEqual(resp.status_code, 200)
-        data = resp.json()
-        self.assertTrue(data['success'])
-        self.assertGreater(data['posts_collected'], 0)
+        from unittest.mock import patch
+        with patch.object(SocialMediaCollector, 'collect_from_platform') as mock_collect:
+            mock_post = SocialPost.objects.create(
+                platform=SocialPlatform.X,
+                external_id="mock_test_123",
+                author_name="MockReporter",
+                content="Mock election report",
+                sentiment_label='Positive',
+                published_at=timezone.now()
+            )
+            mock_collect.return_value = [mock_post]
+
+            resp = self.client.post(
+                reverse('tracker:api_collect'),
+                data=json.dumps({'platform': 'X', 'count': 1, 'engine': 'VADER'}),
+                content_type='application/json'
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.json()
+            self.assertTrue(data['success'])
+            self.assertGreater(data['posts_collected'], 0)
 
     def test_wordcloud_ajax_endpoint(self):
         resp = self.client.get(reverse('tracker:api_wordcloud') + '?sentiment=Positive')

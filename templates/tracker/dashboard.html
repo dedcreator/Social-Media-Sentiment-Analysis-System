@@ -1,18 +1,25 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}2027 Gubernatorial Election Sentiment Analysis Dashboard{% endblock %}
+{% block title %}The Gubernatorial Dispatch — 2027 Election Sentiment Monitor{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
+<div class="space-y-8">
 
-    <!-- Top Filter Header -->
-    <div class="glass-card rounded-2xl p-4 sm:p-5 shadow-xl">
-        <form method="GET" action="{% url 'tracker:dashboard' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
+    <!-- Editorial Filter Bar (Paper Style) -->
+    <div class="paper-card rounded-lg p-5">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-sliders text-xs text-stone-500"></i>
+                <span class="font-mono text-xs uppercase tracking-widest text-ink-700 font-semibold">Filter Dispatch Archive</span>
+            </div>
+            <span class="font-mono text-[11px] text-stone-400">INDEX: {{ total_posts }} REAL OBSERVATIONS</span>
+        </div>
+        <form method="GET" action="{% url 'tracker:dashboard' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end text-xs">
             <!-- State Filter -->
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">State / Race</label>
-                <select name="state" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                <label class="block font-mono uppercase text-[10px] text-stone-500 tracking-wider mb-1">State Race</label>
+                <select name="state" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-900 focus:outline-none focus:border-stone-600 font-sans">
                     <option value="">All States</option>
                     {% for st in states_list %}
                         <option value="{{ st.id }}" {% if selected_state == st.id|stringformat:"s" %}selected{% endif %}>{{ st.state }}</option>
@@ -22,8 +29,8 @@
 
             <!-- Candidate Filter -->
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Candidate</label>
-                <select name="candidate" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                <label class="block font-mono uppercase text-[10px] text-stone-500 tracking-wider mb-1">Candidate</label>
+                <select name="candidate" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-900 focus:outline-none focus:border-stone-600 font-sans">
                     <option value="">All Candidates</option>
                     {% for c in candidates_list %}
                         <option value="{{ c.id }}" {% if selected_candidate == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }} ({{ c.party }})</option>
@@ -33,9 +40,9 @@
 
             <!-- Platform Filter -->
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Platform</label>
-                <select name="platform" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
-                    <option value="">All Platforms</option>
+                <label class="block font-mono uppercase text-[10px] text-stone-500 tracking-wider mb-1">Channel / Source</label>
+                <select name="platform" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-900 focus:outline-none focus:border-stone-600 font-sans">
+                    <option value="">All Sources</option>
                     {% for p_val, p_lbl in platforms_list %}
                         <option value="{{ p_val }}" {% if selected_platform == p_val %}selected{% endif %}>{{ p_lbl }}</option>
                     {% endfor %}
@@ -44,8 +51,8 @@
 
             <!-- Sentiment Filter -->
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Sentiment</label>
-                <select name="sentiment" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
+                <label class="block font-mono uppercase text-[10px] text-stone-500 tracking-wider mb-1">Sentiment Mood</label>
+                <select name="sentiment" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-900 focus:outline-none focus:border-stone-600 font-sans">
                     <option value="">All Sentiments</option>
                     <option value="Positive" {% if selected_sentiment == 'Positive' %}selected{% endif %}>Positive Only</option>
                     <option value="Neutral" {% if selected_sentiment == 'Neutral' %}selected{% endif %}>Neutral Only</option>
@@ -55,430 +62,362 @@
 
             <!-- Time Window -->
             <div>
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Time Window</label>
-                <select name="days" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-blue">
-                    <option value="7" {% if selected_days == '7' %}selected{% endif %}>Last 7 Days</option>
-                    <option value="14" {% if selected_days == '14' %}selected{% endif %}>Last 14 Days</option>
-                    <option value="30" {% if selected_days == '30' %}selected{% endif %}>Last 30 Days</option>
-                    <option value="all" {% if selected_days == 'all' %}selected{% endif %}>All Time</option>
+                <label class="block font-mono uppercase text-[10px] text-stone-500 tracking-wider mb-1">Timeline Window</label>
+                <select name="days" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-900 focus:outline-none focus:border-stone-600 font-sans">
+                    <option value="7" {% if selected_days == '7' %}selected{% endif %}>Past 7 Days</option>
+                    <option value="14" {% if selected_days == '14' %}selected{% endif %}>Past 14 Days</option>
+                    <option value="30" {% if selected_days == '30' %}selected{% endif %}>Past 30 Days</option>
+                    <option value="all" {% if selected_days == 'all' %}selected{% endif %}>Historical Archive</option>
                 </select>
             </div>
 
             <!-- Action Buttons -->
             <div class="flex items-center space-x-2">
-                <button type="submit" class="flex-1 bg-brand-blue hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-xl text-xs transition shadow-md shadow-blue-500/20 flex items-center justify-center space-x-1.5">
-                    <i class="fa-solid fa-filter"></i>
-                    <span>Apply</span>
+                <button type="submit" class="flex-1 bg-stone-900 hover:bg-stone-800 text-white font-mono uppercase text-xs py-1.5 px-3 rounded tracking-wider transition">
+                    Apply Filter
                 </button>
-                <a href="{% url 'tracker:dashboard' %}" class="bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white py-2 px-3 rounded-xl text-xs transition" title="Clear Filters">
+                <a href="{% url 'tracker:dashboard' %}" class="bg-white border border-stone-300 hover:bg-stone-50 text-stone-600 py-1.5 px-2.5 rounded text-xs transition" title="Reset Filters">
                     <i class="fa-solid fa-rotate-left"></i>
                 </a>
             </div>
         </form>
     </div>
 
-    <!-- Top KPI Metric Cards -->
+    <!-- Metric Ledger (Paper Style KPI Cards) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <!-- Total Posts -->
-        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Posts Tracked</span>
-                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-brand-blue flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-comments"></i>
-                </div>
-            </div>
-            <div class="text-3xl font-black text-white tracking-tight">{{ total_posts }}</div>
-            <p class="text-xs text-slate-400 mt-1">Multi-platform election discourse</p>
-            <div class="mt-3 flex items-center space-x-2 text-[10px] text-slate-400">
-                <span class="inline-flex items-center"><i class="fa-brands fa-x-twitter mr-1"></i> X</span>
-                <span>•</span>
-                <span class="inline-flex items-center text-blue-400"><i class="fa-brands fa-facebook mr-1"></i> FB</span>
-                <span>•</span>
-                <span class="inline-flex items-center text-rose-400"><i class="fa-brands fa-youtube mr-1"></i> YT</span>
-                <span>•</span>
-                <span class="inline-flex items-center text-emerald-400"><i class="fa-solid fa-newspaper mr-1"></i> News</span>
+        <div class="paper-card rounded-lg p-5 relative">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-stone-500 block mb-1">Total Monitored Content</span>
+            <div class="font-serif text-4xl text-ink-900 font-semibold tracking-tight">{{ total_posts }}</div>
+            <p class="font-serif italic text-xs text-ink-500 mt-1">Real dispatches, articles & commentary</p>
+            <div class="mt-3 pt-2.5 border-t border-stone-200/80 font-mono text-[10px] text-stone-500 flex items-center justify-between">
+                <span>VERIFIED REAL FEEDS</span>
+                <i class="fa-solid fa-check-double text-stone-400"></i>
             </div>
         </div>
 
-        <!-- Positive Sentiment -->
-        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-500/40 transition">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Positive Reactions</span>
-                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-face-smile"></i>
-                </div>
-            </div>
+        <!-- Positive Reactions -->
+        <div class="paper-card rounded-lg p-5 relative border-t-2 border-t-sage-600">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-sage-600 block mb-1">Favorable / Endorsements</span>
             <div class="flex items-baseline space-x-2">
-                <div class="text-3xl font-black text-emerald-400 tracking-tight">{{ pos_pct }}%</div>
-                <span class="text-xs text-slate-400">({{ pos_count }} posts)</span>
+                <span class="font-serif text-4xl text-sage-700 font-semibold tracking-tight">{{ pos_pct }}%</span>
+                <span class="font-mono text-xs text-stone-400">({{ pos_count }})</span>
             </div>
-            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-                <div class="bg-emerald-500 h-1.5 rounded-full" style="width: {{ pos_pct }}%"></div>
+            <div class="w-full bg-stone-100 h-1 rounded-full mt-3 overflow-hidden">
+                <div class="bg-sage-600 h-1 rounded-full" style="width: {{ pos_pct }}%"></div>
             </div>
-            <p class="text-[11px] text-slate-400 mt-2">Praise, endorsements & policy trust</p>
+            <p class="font-serif italic text-xs text-ink-500 mt-2">Praise, endorsements & policy trust</p>
         </div>
 
-        <!-- Negative Sentiment -->
-        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-rose-500/40 transition">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider text-rose-400">Negative Reactions</span>
-                <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-face-frown"></i>
-                </div>
-            </div>
+        <!-- Negative Reactions -->
+        <div class="paper-card rounded-lg p-5 relative border-t-2 border-t-rust-600">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-rust-600 block mb-1">Critical / Opposition</span>
             <div class="flex items-baseline space-x-2">
-                <div class="text-3xl font-black text-rose-400 tracking-tight">{{ neg_pct }}%</div>
-                <span class="text-xs text-slate-400">({{ neg_count }} posts)</span>
+                <span class="font-serif text-4xl text-rust-700 font-semibold tracking-tight">{{ neg_pct }}%</span>
+                <span class="font-mono text-xs text-stone-400">({{ neg_count }})</span>
             </div>
-            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-                <div class="bg-rose-500 h-1.5 rounded-full" style="width: {{ neg_pct }}%"></div>
+            <div class="w-full bg-stone-100 h-1 rounded-full mt-3 overflow-hidden">
+                <div class="bg-rust-600 h-1 rounded-full" style="width: {{ neg_pct }}%"></div>
             </div>
-            <p class="text-[11px] text-slate-400 mt-2">Critiques, grievances & pushback</p>
+            <p class="font-serif italic text-xs text-ink-500 mt-2">Critiques, grievances & pushback</p>
         </div>
 
-        <!-- Neutral Sentiment -->
-        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-slate-700 transition">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Neutral / News</span>
-                <div class="w-8 h-8 rounded-lg bg-slate-700/30 text-slate-400 flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-face-meh"></i>
-                </div>
-            </div>
+        <!-- Neutral Reactions -->
+        <div class="paper-card rounded-lg p-5 relative border-t-2 border-t-slateink-600">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-slateink-600 block mb-1">Neutral / Press Reports</span>
             <div class="flex items-baseline space-x-2">
-                <div class="text-3xl font-black text-slate-300 tracking-tight">{{ neu_pct }}%</div>
-                <span class="text-xs text-slate-400">({{ neu_count }} posts)</span>
+                <span class="font-serif text-4xl text-slateink-700 font-semibold tracking-tight">{{ neu_pct }}%</span>
+                <span class="font-mono text-xs text-stone-400">({{ neu_count }})</span>
             </div>
-            <div class="w-full bg-slate-800 rounded-full h-1.5 mt-3 overflow-hidden">
-                <div class="bg-slate-500 h-1.5 rounded-full" style="width: {{ neu_pct }}%"></div>
+            <div class="w-full bg-stone-100 h-1 rounded-full mt-3 overflow-hidden">
+                <div class="bg-slateink-600 h-1 rounded-full" style="width: {{ neu_pct }}%"></div>
             </div>
-            <p class="text-[11px] text-slate-400 mt-2">News updates & factual reports</p>
+            <p class="font-serif italic text-xs text-ink-500 mt-2">Objective reports & timetables</p>
         </div>
 
         <!-- Net Sentiment Index -->
-        <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-purple-500/40 transition">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-semibold uppercase tracking-wider text-purple-400">Net Sentiment Index</span>
-                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center text-sm">
-                    <i class="fa-solid fa-gauge-high"></i>
-                </div>
-            </div>
+        <div class="paper-card rounded-lg p-5 relative border-t-2 border-t-stone-800">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-ink-800 block mb-1">Net Mood Index</span>
             <div class="flex items-baseline space-x-2">
-                <div class="text-3xl font-black {% if net_sentiment_score > 0 %}text-emerald-400{% elif net_sentiment_score < 0 %}text-rose-400{% else %}text-slate-300{% endif %} tracking-tight">
+                <span class="font-serif text-4xl font-semibold {% if net_sentiment_score > 0 %}text-sage-700{% elif net_sentiment_score < 0 %}text-rust-700{% else %}text-ink-800{% endif %} tracking-tight">
                     {% if net_sentiment_score > 0 %}+{% endif %}{{ net_sentiment_score }}%
-                </div>
+                </span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">Avg Polarity Score: <span class="font-mono text-slate-200">{{ avg_score }}</span></p>
-            <div class="mt-3 text-[10px] text-slate-400">Calculated as: % Positive − % Negative</div>
+            <p class="font-mono text-[11px] text-ink-500 mt-1">Avg Polarity: <span class="text-ink-800 font-semibold">{{ avg_score }}</span></p>
+            <div class="mt-3 pt-2.5 border-t border-stone-200/80 font-mono text-[10px] text-stone-500">
+                Formula: % Favorable − % Critical
+            </div>
         </div>
     </div>
 
-    <!-- Row 1: Charts (Sentiment Trends Over Time & Polarity Donut) -->
+    <!-- Charts Section 1: Sentiment Trends Over Time & Polarity Breakdown -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Sentiment Trends Over Time -->
-        <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-4">
+        <div class="lg:col-span-2 paper-card rounded-lg p-6 flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-baseline justify-between pb-4 mb-4 border-b border-stone-200 gap-2">
                 <div>
-                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-chart-area text-brand-blue"></i>
-                        <span>Sentiment Trends Over Time</span>
-                    </h2>
-                    <p class="text-xs text-slate-400">Daily trajectory of positive, neutral, and negative election discourse</p>
+                    <h2 class="font-serif text-lg font-semibold text-ink-900">Sentiment Trajectory Over Time</h2>
+                    <p class="font-serif italic text-xs text-ink-500">Daily frequency of favorable, critical, and neutral coverage</p>
                 </div>
-                <div class="flex items-center space-x-2 text-xs">
-                    <span class="flex items-center space-x-1 text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> <span>Positive</span></span>
-                    <span class="flex items-center space-x-1 text-slate-400"><span class="w-2 h-2 rounded-full bg-slate-400"></span> <span>Neutral</span></span>
-                    <span class="flex items-center space-x-1 text-rose-400"><span class="w-2 h-2 rounded-full bg-rose-400"></span> <span>Negative</span></span>
+                <!-- Legend -->
+                <div class="flex items-center space-x-4 font-mono text-[11px] text-ink-700">
+                    <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 bg-sage-600 rounded-sm"></span> <span>Favorable</span></span>
+                    <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 bg-slateink-600 rounded-sm"></span> <span>Neutral</span></span>
+                    <span class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 bg-rust-600 rounded-sm"></span> <span>Critical</span></span>
                 </div>
             </div>
             <div class="h-72 w-full relative">
                 <canvas id="sentimentTrendsChart"></canvas>
             </div>
+            <div class="pt-3 border-t border-stone-200 font-mono text-[10px] text-stone-400 text-right">
+                CHART 1.1 • DISPATCH TIME-SERIES
+            </div>
         </div>
 
-        <!-- Sentiment Distribution Donut -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-            <div class="mb-4">
-                <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-chart-pie text-emerald-400"></i>
-                    <span>Sentiment Breakdown</span>
-                </h2>
-                <p class="text-xs text-slate-400">Overall ratio across all collected election content</p>
+        <!-- Sentiment Polarity Donut -->
+        <div class="paper-card rounded-lg p-6 flex flex-col justify-between">
+            <div class="pb-3 mb-4 border-b border-stone-200">
+                <h2 class="font-serif text-lg font-semibold text-ink-900">Aggregate Mood Split</h2>
+                <p class="font-serif italic text-xs text-ink-500">Proportional sentiment balance</p>
             </div>
-            <div class="h-60 w-full relative flex items-center justify-center">
+            <div class="h-56 w-full relative flex items-center justify-center">
                 <canvas id="sentimentDonutChart"></canvas>
             </div>
-            <div class="grid grid-cols-3 gap-2 text-center pt-4 border-t border-slate-800 text-xs">
+            <div class="grid grid-cols-3 gap-2 text-center pt-4 border-t border-stone-200 font-mono text-xs">
                 <div>
-                    <span class="text-emerald-400 font-bold block">{{ pos_pct }}%</span>
-                    <span class="text-[10px] text-slate-400">Positive</span>
+                    <span class="text-sage-700 font-bold block">{{ pos_pct }}%</span>
+                    <span class="text-[10px] text-stone-400">FAVORABLE</span>
                 </div>
                 <div>
-                    <span class="text-slate-300 font-bold block">{{ neu_pct }}%</span>
-                    <span class="text-[10px] text-slate-400">Neutral</span>
+                    <span class="text-slateink-700 font-bold block">{{ neu_pct }}%</span>
+                    <span class="text-[10px] text-stone-400">NEUTRAL</span>
                 </div>
                 <div>
-                    <span class="text-rose-400 font-bold block">{{ neg_pct }}%</span>
-                    <span class="text-[10px] text-slate-400">Negative</span>
+                    <span class="text-rust-700 font-bold block">{{ neg_pct }}%</span>
+                    <span class="text-[10px] text-stone-400">CRITICAL</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Row 2: Candidates Sentiment Leaderboard & Top Candidates -->
+    <!-- Charts Section 2: Candidate Perception Ledger & Editorial Highlights -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Candidates Sentiment Comparison Chart -->
-        <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-xl">
-            <div class="flex items-center justify-between mb-4">
+        <!-- Candidate Sentiment Stacked Chart -->
+        <div class="lg:col-span-2 paper-card rounded-lg p-6">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-stone-200">
                 <div>
-                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-users text-purple-400"></i>
-                        <span>Candidate Sentiment Comparison</span>
-                    </h2>
-                    <p class="text-xs text-slate-400">Net sentiment index and positive vs negative reactions per candidate</p>
+                    <h2 class="font-serif text-lg font-semibold text-ink-900">Candidate Perception Comparison</h2>
+                    <p class="font-serif italic text-xs text-ink-500">Relative distribution of favorable vs critical public discourse</p>
                 </div>
-                <span class="text-xs text-slate-400 bg-slate-800 px-2.5 py-1 rounded-lg">Stacked Percentages</span>
+                <span class="stamp-badge px-2 py-0.5 rounded bg-stone-100 text-stone-600 border border-stone-200">
+                    STACKED PERCENTILES
+                </span>
             </div>
             <div class="h-80 w-full relative">
                 <canvas id="candidateComparisonChart"></canvas>
             </div>
         </div>
 
-        <!-- Highlights & Leaderboard Cards -->
+        <!-- Editorial Highlights Ledger -->
         <div class="space-y-4 flex flex-col justify-between">
-            <!-- Most Positive Candidate -->
+            <!-- Most Favorable Candidate -->
             {% if candidates_summary.most_positive %}
-            <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500 shadow-xl">
+            <div class="paper-card rounded-lg p-5 border-l-4 border-l-sage-600">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center">
-                        <i class="fa-solid fa-crown mr-1.5 text-amber-400"></i> Most Positive Reactions
+                    <span class="stamp-badge text-sage-700 font-bold flex items-center">
+                        <i class="fa-solid fa-award mr-1.5"></i> LEADING IN FAVORABLE DISCOURSE
                     </span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">
-                        +{{ candidates_summary.most_positive.net_sentiment }}% Net
+                    <span class="stamp-badge px-2 py-0.5 rounded bg-sage-50 text-sage-700 border border-sage-200">
+                        +{{ candidates_summary.most_positive.net_sentiment }}% NET
                     </span>
                 </div>
-                <div class="flex items-center space-x-3 mt-2">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm shadow-md" style="background-color: {{ candidates_summary.most_positive.color }};">
-                        {{ candidates_summary.most_positive.name|slice:":2"|upper }}
-                    </div>
-                    <div>
-                        <a href="{% url 'tracker:candidate_detail' candidates_summary.most_positive.id %}" class="font-bold text-white hover:text-emerald-400 transition text-sm">
-                            {{ candidates_summary.most_positive.name }}
-                        </a>
-                        <p class="text-xs text-slate-400">{{ candidates_summary.most_positive.party }} • {{ candidates_summary.most_positive.state }} State</p>
-                    </div>
+                <div class="mt-2">
+                    <a href="{% url 'tracker:candidate_detail' candidates_summary.most_positive.id %}" class="font-serif text-xl font-bold text-ink-900 hover:underline">
+                        {{ candidates_summary.most_positive.name }}
+                    </a>
+                    <p class="font-mono text-xs text-stone-500 mt-0.5">
+                        {{ candidates_summary.most_positive.party }} • {{ candidates_summary.most_positive.state }} State Race
+                    </p>
                 </div>
-                <div class="mt-3 flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800">
-                    <span>Positive: <strong class="text-emerald-400">{{ candidates_summary.most_positive.pos_pct }}%</strong></span>
-                    <span>Negative: <strong class="text-rose-400">{{ candidates_summary.most_positive.neg_pct }}%</strong></span>
-                    <span>Mentions: <strong>{{ candidates_summary.most_positive.total }}</strong></span>
+                <div class="mt-3 pt-3 border-t border-stone-200 font-mono text-xs flex items-center justify-between text-ink-700">
+                    <span>Favorable: <strong class="text-sage-700">{{ candidates_summary.most_positive.pos_pct }}%</strong></span>
+                    <span>Critical: <strong class="text-rust-700">{{ candidates_summary.most_positive.neg_pct }}%</strong></span>
+                    <span>Volume: <strong>{{ candidates_summary.most_positive.total }}</strong></span>
                 </div>
             </div>
             {% endif %}
 
-            <!-- Most Negative Reactions Candidate -->
+            <!-- Most Critical Candidate -->
             {% if candidates_summary.most_negative %}
-            <div class="glass-card rounded-2xl p-5 border-l-4 border-rose-500 shadow-xl">
+            <div class="paper-card rounded-lg p-5 border-l-4 border-l-rust-600">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-bold uppercase tracking-wider text-rose-400 flex items-center">
-                        <i class="fa-solid fa-triangle-exclamation mr-1.5 text-rose-400"></i> Most Critical / Negative
+                    <span class="stamp-badge text-rust-700 font-bold flex items-center">
+                        <i class="fa-solid fa-circle-exclamation mr-1.5"></i> HIGHEST OPPOSITION & CRITIQUE
                     </span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300">
-                        {{ candidates_summary.most_negative.net_sentiment }}% Net
+                    <span class="stamp-badge px-2 py-0.5 rounded bg-rust-50 text-rust-700 border border-rust-200">
+                        {{ candidates_summary.most_negative.net_sentiment }}% NET
                     </span>
                 </div>
-                <div class="flex items-center space-x-3 mt-2">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-sm shadow-md" style="background-color: {{ candidates_summary.most_negative.color }};">
-                        {{ candidates_summary.most_negative.name|slice:":2"|upper }}
-                    </div>
-                    <div>
-                        <a href="{% url 'tracker:candidate_detail' candidates_summary.most_negative.id %}" class="font-bold text-white hover:text-rose-400 transition text-sm">
-                            {{ candidates_summary.most_negative.name }}
-                        </a>
-                        <p class="text-xs text-slate-400">{{ candidates_summary.most_negative.party }} • {{ candidates_summary.most_negative.state }} State</p>
-                    </div>
+                <div class="mt-2">
+                    <a href="{% url 'tracker:candidate_detail' candidates_summary.most_negative.id %}" class="font-serif text-xl font-bold text-ink-900 hover:underline">
+                        {{ candidates_summary.most_negative.name }}
+                    </a>
+                    <p class="font-mono text-xs text-stone-500 mt-0.5">
+                        {{ candidates_summary.most_negative.party }} • {{ candidates_summary.most_negative.state }} State Race
+                    </p>
                 </div>
-                <div class="mt-3 flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-slate-800">
-                    <span>Negative: <strong class="text-rose-400">{{ candidates_summary.most_negative.neg_pct }}%</strong></span>
-                    <span>Positive: <strong class="text-emerald-400">{{ candidates_summary.most_negative.pos_pct }}%</strong></span>
-                    <span>Mentions: <strong>{{ candidates_summary.most_negative.total }}</strong></span>
+                <div class="mt-3 pt-3 border-t border-stone-200 font-mono text-xs flex items-center justify-between text-ink-700">
+                    <span>Critical: <strong class="text-rust-700">{{ candidates_summary.most_negative.neg_pct }}%</strong></span>
+                    <span>Favorable: <strong class="text-sage-700">{{ candidates_summary.most_negative.pos_pct }}%</strong></span>
+                    <span>Volume: <strong>{{ candidates_summary.most_negative.total }}</strong></span>
                 </div>
             </div>
             {% endif %}
 
             <!-- Most Discussed Candidate -->
             {% if candidates_summary.most_discussed %}
-            <div class="glass-card rounded-2xl p-4 shadow-xl flex items-center justify-between">
+            <div class="paper-card rounded-lg p-4 flex items-center justify-between">
                 <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-brand-blue">Highest Social Buzz</span>
-                    <p class="text-sm font-bold text-white mt-0.5">{{ candidates_summary.most_discussed.name }} ({{ candidates_summary.most_discussed.party }})</p>
-                    <p class="text-xs text-slate-400">{{ candidates_summary.most_discussed.total }} total comments & reactions</p>
+                    <span class="stamp-badge text-stone-500 block mb-0.5">HIGHEST MENTIONS VOLUME</span>
+                    <p class="font-serif text-base font-bold text-ink-900">{{ candidates_summary.most_discussed.name }} ({{ candidates_summary.most_discussed.party }})</p>
+                    <p class="font-mono text-[11px] text-stone-500">{{ candidates_summary.most_discussed.total }} recorded dispatches</p>
                 </div>
-                <a href="{% url 'tracker:candidate_detail' candidates_summary.most_discussed.id %}" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700 transition">
-                    View Profile <i class="fa-solid fa-arrow-right ml-1 text-slate-400"></i>
+                <a href="{% url 'tracker:candidate_detail' candidates_summary.most_discussed.id %}" class="px-3 py-1.5 rounded border border-stone-300 font-mono text-xs text-ink-800 hover:bg-stone-50 transition">
+                    View Dossier <i class="fa-solid fa-arrow-right ml-1 text-stone-400"></i>
                 </a>
             </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- Row 3: Word Clouds & Platform Breakdown -->
+    <!-- Charts Section 3: Word Cloud & Channel Comparison -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Interactive Word Cloud -->
-        <div class="lg:col-span-2 glass-card rounded-2xl p-6 shadow-xl">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <!-- Interactive Word Cloud (Paper Style) -->
+        <div class="lg:col-span-2 paper-card rounded-lg p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-stone-200 gap-3">
                 <div>
-                    <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                        <i class="fa-solid fa-cloud text-cyan-400"></i>
-                        <span>Frequently Used Words & Topics</span>
-                    </h2>
-                    <p class="text-xs text-slate-400">Election keywords extracted from public social commentary</p>
+                    <h2 class="font-serif text-lg font-semibold text-ink-900">Salient Terminology & Lexicon</h2>
+                    <p class="font-serif italic text-xs text-ink-500">Most frequent political terms extracted from authentic reports</p>
                 </div>
-                <!-- Wordcloud Sentiment Filter Tabs -->
-                <div class="inline-flex rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs">
-                    <button class="wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition bg-brand-blue text-white" data-sentiment="all">All Words</button>
-                    <button class="wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-emerald-400" data-sentiment="Positive">Positive Only</button>
-                    <button class="wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-rose-400" data-sentiment="Negative">Negative Only</button>
+                <!-- Tabs -->
+                <div class="inline-flex rounded border border-stone-300 p-0.5 bg-stone-50 font-mono text-xs">
+                    <button class="wc-tab-btn px-3 py-1 rounded font-medium transition bg-stone-900 text-white" data-sentiment="all">All Lexicon</button>
+                    <button class="wc-tab-btn px-3 py-1 rounded font-medium transition text-stone-600 hover:text-sage-700" data-sentiment="Positive">Favorable</button>
+                    <button class="wc-tab-btn px-3 py-1 rounded font-medium transition text-stone-600 hover:text-rust-700" data-sentiment="Negative">Critical</button>
                 </div>
             </div>
 
             <!-- Word Cloud Render Area -->
-            <div id="wordcloudContainer" class="rounded-xl bg-slate-900/90 border border-slate-800 p-3 min-h-[280px] flex items-center justify-center relative overflow-hidden">
+            <div id="wordcloudContainer" class="rounded border border-stone-200 bg-[#FAF9F6] p-4 min-h-[280px] flex items-center justify-center relative overflow-hidden">
                 {% if wordcloud_base64 %}
-                    <img id="wordcloudImage" src="data:image/png;base64,{{ wordcloud_base64 }}" alt="Election Word Cloud" class="max-w-full h-auto rounded-lg shadow-md transition-opacity duration-300">
+                    <img id="wordcloudImage" src="data:image/png;base64,{{ wordcloud_base64 }}" alt="Election Discourse Word Cloud" class="max-w-full h-auto rounded transition-opacity duration-300">
                 {% else %}
-                    <div class="text-center text-slate-400 py-12">
-                        <i class="fa-solid fa-cloud-moon text-3xl mb-2 text-slate-600"></i>
-                        <p class="text-sm">No word cloud data available for current filter.</p>
+                    <div class="text-center text-stone-400 py-12 font-serif italic text-sm">
+                        No word cloud data available for this selection.
                     </div>
                 {% endif %}
-                <div id="wordcloudSpinner" class="hidden absolute inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center">
-                    <i class="fa-solid fa-circle-notch animate-spin text-2xl text-cyan-400"></i>
+                <div id="wordcloudSpinner" class="hidden absolute inset-0 bg-[#FAF9F6]/80 backdrop-blur-xs flex items-center justify-center">
+                    <i class="fa-solid fa-circle-notch animate-spin text-2xl text-stone-700"></i>
                 </div>
             </div>
 
-            <!-- Top Word Frequency Pills -->
+            <!-- Frequency Pills -->
             <div class="mt-4">
-                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-2">High-frequency terms:</span>
+                <span class="font-mono text-[10px] uppercase tracking-widest text-stone-400 block mb-2">High-Frequency Keywords:</span>
                 <div id="wordFreqPills" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                     {% for item in word_frequencies|slice:":25" %}
-                        <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono">
-                            {{ item.text }} <span class="text-cyan-400 font-bold ml-1">{{ item.weight }}</span>
+                        <span class="px-2 py-0.5 rounded border border-stone-200 bg-stone-50 text-ink-800 font-mono text-[11px]">
+                            {{ item.text }} <strong class="text-stone-500 font-normal">({{ item.weight }})</strong>
                         </span>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
-        <!-- Cross-Platform Breakdown -->
-        <div class="glass-card rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-            <div class="mb-4">
-                <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-share-nodes text-amber-400"></i>
-                    <span>Cross-Platform Sentiment</span>
-                </h2>
-                <p class="text-xs text-slate-400">How sentiments compare across channels</p>
+        <!-- Channel Comparison Bar Chart -->
+        <div class="paper-card rounded-lg p-6 flex flex-col justify-between">
+            <div class="pb-3 mb-4 border-b border-stone-200">
+                <h2 class="font-serif text-lg font-semibold text-ink-900">Channel Disparity</h2>
+                <p class="font-serif italic text-xs text-ink-500">Sentiment distribution by source channel</p>
             </div>
             <div class="h-64 w-full relative">
                 <canvas id="platformBarChart"></canvas>
             </div>
-            <div class="pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center">
-                Covers X/Twitter, Facebook groups, YouTube debates, & News media reactions
+            <div class="pt-3 border-t border-stone-200 font-mono text-[10px] text-stone-400 text-center">
+                CHART 3.2 • MEDIA SOURCE COMPARISON
             </div>
         </div>
     </div>
 
-    <!-- Row 4: Live Social Media Feed -->
-    <div class="glass-card rounded-2xl p-6 shadow-xl">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+    <!-- Section 4: Live Dispatch Wire (Real Posts Feed) -->
+    <div class="paper-card rounded-lg p-6">
+        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between pb-4 mb-5 border-b border-stone-200 gap-2">
             <div>
-                <h2 class="text-base font-bold text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-rss text-emerald-400"></i>
-                    <span>Latest Collected Election Posts & Comments</span>
-                </h2>
-                <p class="text-xs text-slate-400">Real-time categorized election content with polarity scores</p>
+                <h2 class="font-serif text-xl font-bold text-ink-900">The Live Intelligence Wire</h2>
+                <p class="font-serif italic text-xs text-ink-500">Authentic press reports, statements, and citizen commentary</p>
             </div>
-            <div class="flex items-center space-x-2">
-                <span class="text-xs text-slate-400">Showing latest {{ recent_posts|length }} posts</span>
-            </div>
+            <span class="font-mono text-[11px] text-stone-500">
+                Displaying latest {{ recent_posts|length }} dispatches
+            </span>
         </div>
 
-        <!-- Posts Grid / List -->
-        <div class="space-y-3">
+        <!-- Wire Items List (Editorial Print Styling) -->
+        <div class="divide-y divide-stone-200">
             {% for post in recent_posts %}
-            <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition">
-                <div class="flex items-start justify-between gap-3">
-                    <!-- Left: Author & Platform -->
-                    <div class="flex items-center space-x-3">
-                        <!-- Platform Badge Icon -->
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm
-                            {% if post.platform == 'X' %}bg-slate-800 text-white
-                            {% elif post.platform == 'Facebook' %}bg-blue-600/20 text-blue-400
-                            {% elif post.platform == 'YouTube' %}bg-rose-600/20 text-rose-400
-                            {% else %}bg-emerald-600/20 text-emerald-400{% endif %}">
-                            {% if post.platform == 'X' %}<i class="fa-brands fa-x-twitter"></i>
-                            {% elif post.platform == 'Facebook' %}<i class="fa-brands fa-facebook"></i>
-                            {% elif post.platform == 'YouTube' %}<i class="fa-brands fa-youtube"></i>
-                            {% else %}<i class="fa-solid fa-newspaper"></i>{% endif %}
-                        </div>
-                        <div>
-                            <div class="flex items-center space-x-2">
-                                <span class="font-bold text-xs text-white">{{ post.author_name }}</span>
-                                <span class="text-xs text-slate-500 font-mono">{{ post.author_handle }}</span>
-                            </div>
-                            <div class="text-[10px] text-slate-400">
-                                {{ post.published_at|timesince }} ago • {{ post.platform }}
-                            </div>
-                        </div>
+            <article class="py-4 hover:bg-stone-50/70 transition px-2 rounded">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <!-- Source & Author -->
+                    <div class="flex items-center space-x-2.5 font-mono text-xs">
+                        <span class="font-bold text-ink-900 uppercase tracking-wider">{{ post.author_name }}</span>
+                        <span class="text-stone-300">•</span>
+                        <span class="text-stone-500">{{ post.published_at|timesince }} ago</span>
+                        <span class="text-stone-300">•</span>
+                        <span class="text-stone-600 font-semibold">[{{ post.platform }}]</span>
                     </div>
 
-                    <!-- Right: Candidate & Sentiment Badges -->
+                    <!-- Sentiment Badge & Candidate -->
                     <div class="flex items-center space-x-2">
                         {% if post.candidate %}
-                        <a href="{% url 'tracker:candidate_detail' post.candidate.id %}" class="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center space-x-1">
-                            <span class="w-2 h-2 rounded-full" style="background-color: {{ post.candidate.avatar_color }};"></span>
-                            <span>{{ post.candidate.name }}</span>
+                        <a href="{% url 'tracker:candidate_detail' post.candidate.id %}" class="stamp-badge px-2 py-0.5 rounded bg-stone-100 text-ink-800 border border-stone-300 hover:bg-stone-200 transition">
+                            {{ post.candidate.name }} ({{ post.candidate.party }})
                         </a>
+                        {% elif post.state_race %}
+                        <span class="stamp-badge px-2 py-0.5 rounded bg-stone-100 text-stone-600 border border-stone-200">
+                            {{ post.state_race.state }} State
+                        </span>
                         {% endif %}
 
-                        <!-- Sentiment Pill -->
-                        <span class="px-2.5 py-1 rounded-full text-xs font-bold flex items-center space-x-1
-                            {% if post.sentiment_label == 'Positive' %}bg-emerald-500/15 text-emerald-400 border border-emerald-500/30
-                            {% elif post.sentiment_label == 'Negative' %}bg-rose-500/15 text-rose-400 border border-rose-500/30
-                            {% else %}bg-slate-500/15 text-slate-300 border border-slate-500/30{% endif %}">
-                            {% if post.sentiment_label == 'Positive' %}<i class="fa-solid fa-arrow-trend-up mr-1 text-[10px]"></i>
-                            {% elif post.sentiment_label == 'Negative' %}<i class="fa-solid fa-arrow-trend-down mr-1 text-[10px]"></i>
-                            {% else %}<i class="fa-solid fa-minus mr-1 text-[10px]"></i>{% endif %}
-                            <span>{{ post.sentiment_label }}</span>
-                            <span class="text-[10px] opacity-75 font-mono">({{ post.sentiment_score|floatformat:2 }})</span>
+                        <!-- Stamp Badge -->
+                        <span class="stamp-badge px-2.5 py-0.5 rounded
+                            {% if post.sentiment_label == 'Positive' %}bg-sage-50 text-sage-700 border border-sage-200
+                            {% elif post.sentiment_label == 'Negative' %}bg-rust-50 text-rust-700 border border-rust-200
+                            {% else %}bg-slateink-50 text-slateink-700 border border-slateink-200{% endif %}">
+                            {{ post.sentiment_label }} ({{ post.sentiment_score|floatformat:2 }})
                         </span>
                     </div>
                 </div>
 
-                <!-- Post Text -->
-                <p class="text-xs text-slate-300 mt-3 leading-relaxed">
-                    {{ post.content }}
+                <!-- Post Excerpt / Headline -->
+                <p class="font-serif text-sm sm:text-base text-ink-800 leading-relaxed">
+                    “{{ post.content }}”
                 </p>
 
-                <!-- Footer: Engagement & Engine info -->
-                <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-                    <div class="flex items-center space-x-4">
-                        <span class="flex items-center space-x-1 hover:text-rose-400"><i class="fa-regular fa-heart"></i> <span>{{ post.likes_count }}</span></span>
-                        <span class="flex items-center space-x-1 hover:text-blue-400"><i class="fa-solid fa-retweet"></i> <span>{{ post.shares_count }}</span></span>
-                        <span class="flex items-center space-x-1 hover:text-emerald-400"><i class="fa-regular fa-comment"></i> <span>{{ post.comments_count }}</span></span>
-                        <span class="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-400">Engine: {{ post.sentiment_engine }}</span>
+                <!-- Footer: Engine & Source Link -->
+                <div class="mt-2 flex items-center justify-between font-mono text-[11px] text-stone-500">
+                    <div>
+                        <span>NLP Engine: {{ post.sentiment_engine }}</span>
                     </div>
                     {% if post.url %}
-                    <a href="{{ post.url }}" target="_blank" class="text-brand-blue hover:text-blue-400 flex items-center space-x-1">
-                        <span>Original Post</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                    <a href="{{ post.url }}" target="_blank" rel="noopener noreferrer" class="text-ink-900 font-semibold hover:underline flex items-center space-x-1">
+                        <span>Original Dispatch</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
                     </a>
                     {% endif %}
                 </div>
-            </div>
+            </article>
             {% empty %}
-            <div class="text-center py-12 text-slate-400">
-                <i class="fa-solid fa-inbox text-3xl mb-2 text-slate-600"></i>
-                <p>No posts matching the selected filters.</p>
+            <div class="text-center py-12 font-serif italic text-stone-500">
+                No reports matching the specified filter criteria.
             </div>
             {% endfor %}
         </div>
@@ -489,13 +428,17 @@
 
 {% block extra_scripts %}
 <script>
-    // Parse JSON datasets from Django context
+    // Global Chart.js Paper-style defaults
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
+    Chart.defaults.font.size = 11;
+    Chart.defaults.color = "#52525B";
+
     const trendsData = {{ trends_json|safe }};
     const sentimentDistData = {{ sentiment_dist_json|safe }};
     const candidatesData = {{ candidates_summary_json|safe }};
     const platformsData = {{ platforms_data_json|safe }};
 
-    // 1. Sentiment Trends Over Time Chart
+    // 1. Sentiment Trends Over Time (Paper / Editorial Style)
     const trendsCtx = document.getElementById('sentimentTrendsChart')?.getContext('2d');
     if (trendsCtx && trendsData.dates && trendsData.dates.length > 0) {
         new Chart(trendsCtx, {
@@ -504,37 +447,37 @@
                 labels: trendsData.dates,
                 datasets: [
                     {
-                        label: 'Positive Posts',
+                        label: 'Favorable',
                         data: trendsData.positive,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        borderColor: '#266A46',
+                        backgroundColor: 'rgba(38, 106, 70, 0.08)',
                         fill: true,
-                        tension: 0.35,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
+                        tension: 0.25,
+                        borderWidth: 1.8,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4
                     },
                     {
-                        label: 'Neutral Posts',
+                        label: 'Neutral',
                         data: trendsData.neutral,
-                        borderColor: '#94a3b8',
-                        backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                        borderColor: '#64748B',
+                        backgroundColor: 'rgba(100, 116, 139, 0.05)',
                         fill: true,
-                        tension: 0.35,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
+                        tension: 0.25,
+                        borderWidth: 1.5,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
                     },
                     {
-                        label: 'Negative Posts',
+                        label: 'Critical',
                         data: trendsData.negative,
-                        borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        borderColor: '#9E2A2B',
+                        backgroundColor: 'rgba(158, 42, 43, 0.08)',
                         fill: true,
-                        tension: 0.35,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
+                        tension: 0.25,
+                        borderWidth: 1.8,
+                        pointRadius: 2.5,
+                        pointHoverRadius: 4
                     }
                 ]
             },
@@ -544,62 +487,65 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#E7E4DC',
                         borderWidth: 1,
-                        titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1'
+                        titleColor: '#141416',
+                        bodyColor: '#3A3A40',
+                        titleFont: { weight: 'bold' },
+                        padding: 10,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                     }
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#64748b', font: { size: 11 } }
+                        grid: { color: '#F2F0EB' },
+                        ticks: { color: '#71717A' }
                     },
                     y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#64748b', font: { size: 11 } }
+                        grid: { color: '#F2F0EB' },
+                        ticks: { color: '#71717A' }
                     }
                 }
             }
         });
     }
 
-    // 2. Sentiment Breakdown Donut Chart
+    // 2. Sentiment Donut (Paper Style)
     const donutCtx = document.getElementById('sentimentDonutChart')?.getContext('2d');
     if (donutCtx) {
         new Chart(donutCtx, {
             type: 'doughnut',
             data: {
-                labels: sentimentDistData.labels,
+                labels: ['Favorable', 'Neutral', 'Critical'],
                 datasets: [{
                     data: sentimentDistData.counts,
-                    backgroundColor: ['#10b981', '#64748b', '#ef4444'],
-                    borderWidth: 0,
-                    hoverOffset: 4
+                    backgroundColor: ['#266A46', '#64748B', '#9E2A2B'],
+                    borderColor: '#FFFFFF',
+                    borderWidth: 2,
+                    hoverOffset: 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '72%',
+                cutout: '70%',
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#E7E4DC',
                         borderWidth: 1,
-                        titleColor: '#f8fafc',
-                        bodyColor: '#cbd5e1'
+                        titleColor: '#141416',
+                        bodyColor: '#3A3A40',
+                        padding: 8
                     }
                 }
             }
         });
     }
 
-    // 3. Candidate Sentiment Stacked Bar Chart
+    // 3. Candidate Sentiment Stacked Bar (Paper Style)
     const candidateCtx = document.getElementById('candidateComparisonChart')?.getContext('2d');
     if (candidateCtx && candidatesData.length > 0) {
         const candidateNames = candidatesData.map(c => c.name);
@@ -613,22 +559,22 @@
                 labels: candidateNames,
                 datasets: [
                     {
-                        label: 'Positive %',
+                        label: 'Favorable %',
                         data: posPcts,
-                        backgroundColor: '#10b981',
-                        borderRadius: 4
+                        backgroundColor: '#266A46',
+                        borderRadius: 2
                     },
                     {
                         label: 'Neutral %',
                         data: neuPcts,
-                        backgroundColor: '#64748b',
-                        borderRadius: 4
+                        backgroundColor: '#94A3B8',
+                        borderRadius: 2
                     },
                     {
-                        label: 'Negative %',
+                        label: 'Critical %',
                         data: negPcts,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 4
+                        backgroundColor: '#9E2A2B',
+                        borderRadius: 2
                     }
                 ]
             },
@@ -639,37 +585,34 @@
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { color: '#94a3b8', font: { size: 11 } }
+                        labels: { color: '#52525B', boxWidth: 12 }
                     },
                     tooltip: {
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
+                        backgroundColor: '#FFFFFF',
+                        borderColor: '#E7E4DC',
                         borderWidth: 1,
-                        callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${context.raw}%`;
-                            }
-                        }
+                        titleColor: '#141416',
+                        bodyColor: '#3A3A40'
                     }
                 },
                 scales: {
                     x: {
                         stacked: true,
                         max: 100,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#64748b', callback: val => val + '%' }
+                        grid: { color: '#F2F0EB' },
+                        ticks: { callback: v => v + '%' }
                     },
                     y: {
                         stacked: true,
                         grid: { display: false },
-                        ticks: { color: '#e2e8f0', font: { size: 11, weight: '500' } }
+                        ticks: { color: '#18181B', font: { weight: '500' } }
                     }
                 }
             }
         });
     }
 
-    // 4. Platform Comparison Bar Chart
+    // 4. Platform Comparison Bar (Paper Style)
     const platformCtx = document.getElementById('platformBarChart')?.getContext('2d');
     if (platformCtx && platformsData) {
         const platKeys = Object.keys(platformsData);
@@ -683,16 +626,16 @@
                 labels: platLabels,
                 datasets: [
                     {
-                        label: 'Positive',
+                        label: 'Favorable',
                         data: platPos,
-                        backgroundColor: '#10b981',
-                        borderRadius: 6
+                        backgroundColor: '#266A46',
+                        borderRadius: 2
                     },
                     {
-                        label: 'Negative',
+                        label: 'Critical',
                         data: platNeg,
-                        backgroundColor: '#ef4444',
-                        borderRadius: 6
+                        backgroundColor: '#9E2A2B',
+                        borderRadius: 2
                     }
                 ]
             },
@@ -700,38 +643,23 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { color: '#94a3b8', font: { size: 10 } }
-                    },
-                    tooltip: {
-                        backgroundColor: '#0f172a',
-                        borderColor: '#334155',
-                        borderWidth: 1
-                    }
+                    legend: { position: 'top', labels: { boxWidth: 10 } }
                 },
                 scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8', font: { size: 10 } }
-                    },
-                    y: {
-                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                        ticks: { color: '#64748b', font: { size: 10 } }
-                    }
+                    x: { grid: { display: false } },
+                    y: { grid: { color: '#F2F0EB' } }
                 }
             }
         });
     }
 
-    // 5. Interactive Word Cloud Sentiment Tabs
+    // 5. Dynamic Word Cloud Tabs (Paper Style)
     document.querySelectorAll('.wc-tab-btn').forEach(btn => {
         btn.addEventListener('click', async function() {
-            // Update active styling
             document.querySelectorAll('.wc-tab-btn').forEach(b => {
-                b.className = "wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white";
+                b.className = "wc-tab-btn px-3 py-1 rounded font-medium transition text-stone-600 hover:text-stone-900";
             });
-            this.className = "wc-tab-btn px-3 py-1.5 rounded-lg font-medium transition bg-brand-blue text-white";
+            this.className = "wc-tab-btn px-3 py-1 rounded font-medium transition bg-stone-900 text-white";
 
             const sentiment = this.dataset.sentiment;
             const spinner = document.getElementById('wordcloudSpinner');
@@ -753,16 +681,15 @@
                     img.classList.add('hidden');
                 }
 
-                // Update frequency pills
                 if (data.word_frequencies && pillsContainer) {
                     pillsContainer.innerHTML = data.word_frequencies.slice(0, 25).map(item => `
-                        <span class="px-2.5 py-1 rounded-lg text-xs bg-slate-800/80 text-slate-300 border border-slate-700/60 font-mono">
-                            ${item.text} <span class="text-cyan-400 font-bold ml-1">${item.weight}</span>
+                        <span class="px-2 py-0.5 rounded border border-stone-200 bg-stone-50 text-ink-800 font-mono text-[11px]">
+                            ${item.text} <strong class="text-stone-500 font-normal">(${item.weight})</strong>
                         </span>
                     `).join('');
                 }
             } catch (err) {
-                console.error("Failed to load wordcloud:", err);
+                console.error("Error loading wordcloud:", err);
             } finally {
                 spinner.classList.add('hidden');
             }
