@@ -192,6 +192,9 @@ class SocialPost(models.Model):
 
         # 1. X (Twitter)
         if self.platform == 'X':
+            # Exact status tweet permalink if available
+            if self.url and ('x.com/' in self.url or 'twitter.com/' in self.url) and '/status/' in self.url:
+                return self.url
             # Link to live search stream to guarantee it never hits a 404 'account does not exist' error
             if self.candidate:
                 q = urllib.parse.quote(f"{self.candidate.name} 2027")

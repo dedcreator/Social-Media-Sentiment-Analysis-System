@@ -219,6 +219,21 @@ class ViewsTest(TestCase):
         self.assertEqual(json_resp.status_code, 200)
         self.assertEqual(json_resp.json()['working_url'], "https://www.youtube.com/watch?v=TEST_VID_123&lc=Ugy_TEST_COMMENT_ID")
 
+    def test_x_direct_tweet_working_url(self):
+        x_post = SocialPost.objects.create(
+            platform=SocialPlatform.X,
+            external_id="x_1234567890",
+            author_name="LagosPolls",
+            author_handle="@lagospolls",
+            content="Polls indicate high engagement ahead of 2027 race.",
+            url="https://x.com/lagospolls/status/1234567890",
+            candidate=None,
+            sentiment_label='Neutral',
+            sentiment_score=0.0,
+            published_at=timezone.now()
+        )
+        self.assertEqual(x_post.working_url, "https://x.com/lagospolls/status/1234567890")
+
     def test_export_csv(self):
         resp = self.client.get(reverse('tracker:export_csv'))
         self.assertEqual(resp.status_code, 200)
