@@ -184,7 +184,7 @@
                         {% elif post.platform == 'YouTube' %}
                         <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1.5 px-3 py-1 rounded bg-[#FF0000] hover:bg-[#CC0000] text-white font-mono text-xs tracking-wide transition shadow-2xs">
                             <i class="fa-brands fa-youtube"></i>
-                            <span>Watch on YouTube</span>
+                            <span>{% if '&lc=' in post.working_url %}View Comment{% else %}Watch on YouTube{% endif %}</span>
                             <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5 opacity-80"></i>
                         </a>
                         {% else %}

@@ -3,9 +3,12 @@ import re
 import uuid
 import logging
 import urllib.request
+import urllib.parse
+import json
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone as dt_timezone
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.html import strip_tags
 from .models import SocialPost, SocialPlatform, Candidate, StateRace, CollectionJob
 from .sentiment_engine import analyze_post_sentiment
@@ -189,11 +192,140 @@ class SocialMediaCollector:
 
         return created_posts
 
-    def collect_from_platform(self, platform: str, count: int = 15, engine: str = None) -> list:
+    def collect_youtube_comments(self, limit: int = 20, engine: str = None) -> list:
         """
-        Collects real election posts for a specific platform category from real feeds.
+        Fetches authentic live comments on 2027 Nigerian gubernatorial & election videos
+        using YouTube Data API v3. Generates verified direct permalinks pointing
+        directly to each specific comment (https://www.youtube.com/watch?v=VIDEO_ID&lc=COMMENT_ID).
         """
         engine = engine or self.engine
+        api_key = os.environ.get('YOUTUBE_API_KEY')
+        if not api_key:
+            logger.warning("YOUTUBE_API_KEY not configured in environment; skipping live YouTube comments.")
+            return []
+
+        search_queries = [
+            "2027 gubernatorial election Nigeria Channels Television",
+            "2027 election Nigeria TVC News",
+            "Lagos governorship 2027 Rhodes-Vivour Hamzat",
+            "Rivers governorship 2027 Fubara Wike",
+            "Kano governorship 2027 Yusuf Gawuna",
+            "Oyo governorship 2027 Makinde election",
+        ]
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+        }
+        created_posts = []
+
+        for q in search_queries:
+            if len(created_posts) >= limit:
+                break
+            try:
+                search_url = (
+                    f"https://www.googleapis.com/youtube/v3/search?"
+                    f"part=snippet&q={urllib.parse.quote(q)}&type=video&maxResults=4&key={api_key}"
+                )
+                req = urllib.request.Request(search_url, headers=headers)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    search_res = json.loads(resp.read().decode('utf-8'))
+
+                items = search_res.get('items', [])
+                for it in items:
+                    if len(created_posts) >= limit:
+                        break
+                    vid = it.get('id', {}).get('videoId')
+                    if not vid:
+                        continue
+
+                    # Fetch real comment threads for this video
+                    comments_url = (
+                        f"https://www.googleapis.com/youtube/v3/commentThreads?"
+                        f"part=snippet&videoId={vid}&maxResults=8&key={api_key}&textFormat=plainText"
+                    )
+                    try:
+                        creq = urllib.request.Request(comments_url, headers=headers)
+                        with urllib.request.urlopen(creq, timeout=10) as cresp:
+                            cdata = json.loads(cresp.read().decode('utf-8'))
+
+                        comment_items = cdata.get('items', [])
+                        for citem in comment_items:
+                            if len(created_posts) >= limit:
+                                break
+
+                            cid = citem.get('id')
+                            snippet = citem.get('snippet', {}).get('topLevelComment', {}).get('snippet', {})
+                            raw_text = snippet.get('textDisplay', '')
+                            text = strip_tags(raw_text).strip()
+                            if not text or len(text) < 8:
+                                continue
+
+                            author_name = snippet.get('authorDisplayName', 'YouTube Citizen')
+                            author_handle = author_name if author_name.startswith('@') else f"@{re.sub(r'[^a-zA-Z0-9_]', '', author_name)[:20]}"
+                            pub_str = snippet.get('publishedAt')
+                            pub_date = parse_datetime(pub_str) if pub_str else timezone.now()
+                            likes = int(snippet.get('likeCount', 0))
+                            total_reply_count = int(citem.get('snippet', {}).get('totalReplyCount', 0))
+
+                            ext_id = f"yt_{cid}"
+                            if SocialPost.objects.filter(external_id=ext_id).exists():
+                                continue
+
+                            # Exact direct permalink to the comment on YouTube!
+                            permalink = f"https://www.youtube.com/watch?v={vid}&lc={cid}"
+
+                            cand, race = self.match_candidate_and_race(text)
+
+                            sentiment_data = analyze_post_sentiment(text, engine=engine)
+
+                            post = SocialPost.objects.create(
+                                platform=SocialPlatform.YOUTUBE,
+                                external_id=ext_id,
+                                author_name=author_name,
+                                author_handle=author_handle,
+                                content=text[:600],
+                                url=permalink,
+                                candidate=cand,
+                                state_race=race,
+                                sentiment_label=sentiment_data['label'],
+                                sentiment_score=sentiment_data['score'],
+                                pos_score=sentiment_data['pos'],
+                                neu_score=sentiment_data['neu'],
+                                neg_score=sentiment_data['neg'],
+                                sentiment_engine=sentiment_data['engine'],
+                                likes_count=likes,
+                                shares_count=0,
+                                comments_count=total_reply_count,
+                                published_at=pub_date
+                            )
+                            created_posts.append(post)
+
+                    except urllib.error.HTTPError as c_err:
+                        # Comments may be disabled or 403 on some videos
+                        logger.info(f"Comments unavailable for video {vid}: {c_err}")
+                        continue
+                    except Exception as e:
+                        logger.warning(f"Error fetching comments for video {vid}: {e}")
+                        continue
+
+            except Exception as e:
+                logger.warning(f"Error searching YouTube for query '{q}': {e}")
+                continue
+
+        return created_posts
+
+    def collect_from_platform(self, platform: str, count: int = 15, engine: str = None) -> list:
+        """
+        Collects real election posts for a specific platform category from real feeds or APIs.
+        """
+        engine = engine or self.engine
+
+        # If YouTube is requested and API key is present, collect real YouTube comments
+        if platform == SocialPlatform.YOUTUBE and os.environ.get('YOUTUBE_API_KEY'):
+            yt_posts = self.collect_youtube_comments(limit=count, engine=engine)
+            if yt_posts:
+                return yt_posts
+
         all_real = self.collect_real_feed_articles(limit=count * 3, engine=engine)
         filtered = [p for p in all_real if p.platform == platform]
         if not filtered and all_real:
@@ -205,7 +337,7 @@ class SocialMediaCollector:
         return filtered[:count]
 
     def run_full_collection(self, count_per_platform: int = 15, engine: str = None, triggered_by: str = 'MANUAL_DASHBOARD') -> CollectionJob:
-        """Executes real-data collection across active feeds, logs the job, and refreshes the index."""
+        """Executes real-data collection across active feeds and APIs, logs the job, and refreshes the index."""
         engine = engine or self.engine
         job = CollectionJob.objects.create(
             platform='ALL',
@@ -214,13 +346,18 @@ class SocialMediaCollector:
         )
 
         try:
-            posts = self.collect_real_feed_articles(limit=count_per_platform * 4, engine=engine)
-            total_collected = len(posts)
+            yt_posts = []
+            if os.environ.get('YOUTUBE_API_KEY'):
+                yt_posts = self.collect_youtube_comments(limit=count_per_platform, engine=engine)
+
+            feed_posts = self.collect_real_feed_articles(limit=count_per_platform * 4, engine=engine)
+            total_collected = len(yt_posts) + len(feed_posts)
 
             job.status = 'SUCCESS'
             job.posts_collected = total_collected
             job.completed_at = timezone.now()
-            job.log_message = f"Ingested {total_collected} authentic election posts and reports from live media feeds using {engine} engine."
+            source_desc = f"{len(yt_posts)} live YouTube comments & {len(feed_posts)} media reports" if yt_posts else f"{total_collected} media reports"
+            job.log_message = f"Ingested {total_collected} authentic election posts ({source_desc}) using {engine} engine."
             job.save()
             return job
         except Exception as e:

@@ -195,8 +195,33 @@ class ViewsTest(TestCase):
         self.assertEqual(data['author_name'], "KanoWatcher")
         self.assertEqual(data['sentiment_label'], "Positive")
 
+    def test_youtube_comment_permalink_and_working_url(self):
+        yt_post = SocialPost.objects.create(
+            platform=SocialPlatform.YOUTUBE,
+            external_id="yt_comment_123",
+            author_name="@citizen_commenter",
+            author_handle="@citizen_commenter",
+            content="Gbadebo Rhodes-Vivour has visionary plans for Lagos state in 2027.",
+            url="https://www.youtube.com/watch?v=TEST_VID_123&lc=Ugy_TEST_COMMENT_ID",
+            candidate=None,
+            sentiment_label='Positive',
+            sentiment_score=0.7,
+            published_at=timezone.now()
+        )
+        self.assertIn("&lc=Ugy_TEST_COMMENT_ID", yt_post.working_url)
+        self.assertEqual(yt_post.working_url, "https://www.youtube.com/watch?v=TEST_VID_123&lc=Ugy_TEST_COMMENT_ID")
+
+        resp = self.client.get(reverse('tracker:post_detail', args=[yt_post.id]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "View Comment on YouTube")
+
+        json_resp = self.client.get(reverse('tracker:post_detail_json', args=[yt_post.id]))
+        self.assertEqual(json_resp.status_code, 200)
+        self.assertEqual(json_resp.json()['working_url'], "https://www.youtube.com/watch?v=TEST_VID_123&lc=Ugy_TEST_COMMENT_ID")
+
     def test_export_csv(self):
         resp = self.client.get(reverse('tracker:export_csv'))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp['Content-Type'], 'text/csv')
         self.assertIn(b'Candidate', resp.content)
+
