@@ -34,7 +34,6 @@ db.sqlite3-journal
 media/wordclouds/*.png
 
 # Environments
-.env
 .venv
 env/
 venv/
