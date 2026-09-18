@@ -240,3 +240,44 @@ class ViewsTest(TestCase):
         self.assertEqual(resp['Content-Type'], 'text/csv')
         self.assertIn(b'Candidate', resp.content)
 
+    def test_dispatches_view(self):
+        resp = self.client.get(reverse('tracker:dispatches'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "All Recorded Dispatches")
+        self.assertContains(resp, "KanoWatcher")
+
+    def test_dispatches_search_and_filter(self):
+        resp = self.client.get(reverse('tracker:dispatches') + '?q=Kano&sentiment=Positive')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "KanoWatcher")
+
+    def test_test_analyzer_page_view(self):
+        resp = self.client.get(reverse('tracker:test_analyzer'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "Sentiment Polarity Inspector")
+        self.assertContains(resp, "NLP Laboratory Workbench")
+
+    def test_sentiment_classify_ajax_empty_text(self):
+        resp = self.client.post(
+            reverse('tracker:api_test_sentiment'),
+            data=json.dumps({'text': '   ', 'engine': 'VADER'}),
+            content_type='application/json'
+        )
+        self.assertEqual(resp.status_code, 400)
+        data = resp.json()
+        self.assertFalse(data['success'])
+
+    def test_sentiment_classify_ajax_entity_detection(self):
+        resp = self.client.post(
+            reverse('tracker:api_test_sentiment'),
+            data=json.dumps({'text': 'Abba Yusuf is doing excellent work in Kano.', 'engine': 'VADER'}),
+            content_type='application/json'
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data['success'])
+        self.assertEqual(data['detected_entity']['candidate_name'], 'Abba Yusuf')
+        self.assertEqual(data['detected_entity']['state_name'], 'Kano')
+
+
+

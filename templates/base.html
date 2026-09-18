@@ -156,6 +156,29 @@
                 </div>
             </div>
         </div>
+
+        <!-- Section Navigation Strip -->
+        <div class="border-t border-stone-200 bg-[#FAF9F6]">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <nav class="flex items-center space-x-6 py-2.5 text-xs font-mono uppercase tracking-wider overflow-x-auto">
+                    <a href="{% url 'tracker:dashboard' %}" class="flex items-center space-x-1.5 py-1 text-ink-900 font-bold hover:text-black transition whitespace-nowrap">
+                        <i class="fa-solid fa-chart-line text-[11px] text-stone-500"></i>
+                        <span>Live Dashboard</span>
+                    </a>
+                    <a href="{% url 'tracker:dispatches' %}" class="flex items-center space-x-1.5 py-1 text-ink-700 hover:text-black transition whitespace-nowrap">
+                        <i class="fa-solid fa-newspaper text-[11px] text-stone-500"></i>
+                        <span>All Dispatches</span>
+                        <span class="px-1.5 py-0.5 rounded-full bg-stone-200 text-stone-800 font-bold text-[10px]">
+                            {{ global_dispatches_count|default:"545" }}
+                        </span>
+                    </a>
+                    <a href="{% url 'tracker:test_analyzer' %}" class="flex items-center space-x-1.5 py-1 text-ink-700 hover:text-black transition whitespace-nowrap">
+                        <i class="fa-solid fa-flask-vial text-[11px] text-stone-500"></i>
+                        <span>Sentiment Laboratory</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content Container -->
@@ -236,26 +259,44 @@
     </div>
 
     <!-- Live Classifier Sandbox Modal (Paper Style) -->
-    <div id="sandboxModal" class="fixed inset-0 z-50 hidden bg-stone-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white border border-stone-300 rounded-lg max-w-lg w-full p-6 shadow-xl relative font-sans">
-            <button id="closeSandboxModal" class="absolute top-4 right-4 text-stone-400 hover:text-stone-800">
+    <div id="sandboxModal" class="fixed inset-0 z-50 hidden bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white border border-stone-300 rounded-lg max-w-lg w-full p-6 shadow-2xl relative font-sans max-h-[90vh] overflow-y-auto">
+            <button id="closeSandboxModal" class="absolute top-4 right-4 text-stone-400 hover:text-stone-800 text-lg">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            <div class="mb-5 pb-3 border-b border-stone-200">
-                <span class="font-mono text-[10px] uppercase tracking-widest text-stone-500">LABORATORY EXPERIMENT</span>
-                <h3 class="text-xl font-serif font-semibold text-ink-900 mt-0.5">Sentiment Polarity Inspector</h3>
-                <p class="text-xs text-ink-500 mt-1">Classify custom political commentary with real-time NLP weights</p>
+            <div class="mb-4 pb-3 border-b border-stone-200">
+                <span class="font-mono text-[10px] uppercase tracking-widest text-stone-500 font-semibold">LABORATORY EXPERIMENT</span>
+                <h3 class="text-xl font-serif font-bold text-ink-900 mt-0.5">Sentiment Polarity Inspector</h3>
+                <p class="text-xs text-ink-500 mt-0.5">Classify custom political commentary with real-time NLP weights</p>
             </div>
 
-            <form id="sandboxForm" class="space-y-4 text-xs">
+            <!-- Quick Presets -->
+            <div class="mb-3">
+                <span class="font-mono text-[10px] uppercase tracking-wider text-stone-400 font-semibold block mb-1.5">
+                    Click a sample quote to test:
+                </span>
+                <div class="flex flex-wrap gap-1.5 font-mono text-[11px]">
+                    <button type="button" onclick="setSandboxSample('Rhodes-Vivour proposed visionary transit infrastructure for Lagos traffic relief.', 'VADER')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded border border-stone-200 transition">
+                        Rhodes-Vivour (Lagos)
+                    </button>
+                    <button type="button" onclick="setSandboxSample('The bitter dispute between Sim Fubara and Nyesom Wike is tearing Rivers politics apart.', 'VADER')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded border border-stone-200 transition">
+                        Fubara / Wike (Rivers)
+                    </button>
+                    <button type="button" onclick="setSandboxSample('INEC releases official guidelines and candidate register for 2027 polls.', 'VADER')" class="px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded border border-stone-200 transition">
+                        INEC Notice
+                    </button>
+                </div>
+            </div>
+
+            <form id="sandboxForm" class="space-y-3.5 text-xs">
                 <div>
-                    <label class="block font-mono uppercase tracking-wider text-ink-700 mb-1 font-semibold">Engine</label>
+                    <label class="block font-mono uppercase tracking-wider text-ink-700 mb-1 font-semibold text-[11px]">Engine</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center space-x-2 p-2.5 rounded border border-stone-300 bg-stone-50 cursor-pointer">
+                        <label class="flex items-center space-x-2 p-2.5 rounded border border-stone-300 bg-stone-50 cursor-pointer hover:bg-stone-100 transition">
                             <input type="radio" name="sandbox_engine" value="VADER" checked class="text-stone-900 focus:ring-0">
                             <span class="font-mono text-xs font-semibold text-ink-800">VADER Lexicon</span>
                         </label>
-                        <label class="flex items-center space-x-2 p-2.5 rounded border border-stone-300 bg-stone-50 cursor-pointer">
+                        <label class="flex items-center space-x-2 p-2.5 rounded border border-stone-300 bg-stone-50 cursor-pointer hover:bg-stone-100 transition">
                             <input type="radio" name="sandbox_engine" value="TRANSFORMERS" class="text-stone-900 focus:ring-0">
                             <span class="font-mono text-xs font-semibold text-ink-800">Transformers / BERT</span>
                         </label>
@@ -263,29 +304,50 @@
                 </div>
 
                 <div>
-                    <label class="block font-mono uppercase tracking-wider text-ink-700 mb-1 font-semibold">Commentary Excerpt</label>
-                    <textarea id="sandboxText" rows="3" class="w-full bg-stone-50 border border-stone-300 rounded p-3 text-ink-900 focus:outline-none focus:border-stone-600 font-serif text-sm placeholder-stone-400" placeholder="Type or paste any political quote or social remark..."></textarea>
+                    <label class="block font-mono uppercase tracking-wider text-ink-700 mb-1 font-semibold text-[11px]">Commentary Excerpt</label>
+                    <textarea id="sandboxText" rows="3" class="w-full bg-stone-50 border border-stone-300 rounded p-3 text-ink-900 focus:outline-none focus:border-stone-600 focus:bg-white font-serif text-sm placeholder-stone-400" placeholder="Type or paste any political quote, statement, or citizen remark..."></textarea>
                 </div>
 
+                <!-- Error Alert Box -->
+                <div id="sandboxError" class="hidden p-2.5 rounded bg-rust-50 border border-rust-200 text-rust-700 font-mono text-xs">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    <span id="sandboxErrorMsg">Please enter some text to analyze.</span>
+                </div>
+
+                <!-- Result Box -->
                 <div id="sandboxResult" class="hidden p-4 rounded bg-stone-50 border border-stone-200 space-y-3">
                     <div class="flex items-center justify-between">
-                        <span class="font-mono uppercase text-[10px] text-stone-500 tracking-wider">Classification Verdict</span>
-                        <span id="resultBadge" class="stamp-badge px-2 py-0.5 rounded"></span>
+                        <span class="font-mono uppercase text-[10px] text-stone-500 tracking-wider font-semibold">Classification Verdict</span>
+                        <span id="resultBadge" class="stamp-badge px-2.5 py-0.5 rounded font-semibold text-xs"></span>
                     </div>
                     <div class="flex items-baseline space-x-2">
-                        <span class="text-2xl font-serif font-bold text-ink-900" id="resultScore">0.00</span>
+                        <span class="text-3xl font-serif font-bold text-ink-900" id="resultScore">0.00</span>
                         <span class="text-xs font-mono text-ink-500">Compound Polarity Index</span>
                     </div>
+                    <!-- Visual score bar -->
+                    <div class="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden flex">
+                        <div id="sbBarNeg" class="bg-rust-500 h-full" style="width: 0%"></div>
+                        <div id="sbBarNeu" class="bg-stone-400 h-full" style="width: 100%"></div>
+                        <div id="sbBarPos" class="bg-sage-600 h-full" style="width: 0%"></div>
+                    </div>
                     <div class="grid grid-cols-3 gap-2 text-center pt-2 border-t border-stone-200 font-mono text-[11px]">
-                        <div class="p-1 bg-white border border-stone-200 rounded text-sage-600">Pos: <span id="resPos">0%</span></div>
-                        <div class="p-1 bg-white border border-stone-200 rounded text-slateink-600">Neu: <span id="resNeu">0%</span></div>
-                        <div class="p-1 bg-white border border-stone-200 rounded text-rust-600">Neg: <span id="resNeg">0%</span></div>
+                        <div class="p-1.5 bg-white border border-stone-200 rounded text-sage-600">Pos: <span id="resPos" class="font-bold">0%</span></div>
+                        <div class="p-1.5 bg-white border border-stone-200 rounded text-slateink-600">Neu: <span id="resNeu" class="font-bold">0%</span></div>
+                        <div class="p-1.5 bg-white border border-stone-200 rounded text-rust-600">Neg: <span id="resNeg" class="font-bold">0%</span></div>
+                    </div>
+                    <!-- Entity row -->
+                    <div id="sbEntityRow" class="pt-2 border-t border-stone-200 font-mono text-[11px] text-stone-600 hidden">
+                        <span class="text-stone-400">Entity:</span> <strong id="sbEntityText" class="text-stone-900"></strong>
                     </div>
                 </div>
 
-                <div class="pt-3 border-t border-stone-200 flex justify-end space-x-2">
-                    <button type="submit" id="submitSandboxBtn" class="px-5 py-2 bg-stone-900 text-white rounded font-mono text-xs uppercase tracking-wider hover:bg-stone-800 transition">
-                        <span>Analyze Excerpt</span>
+                <div class="pt-2 border-t border-stone-200 flex items-center justify-between">
+                    <a href="{% url 'tracker:test_analyzer' %}" class="font-mono text-xs text-stone-600 hover:text-stone-900 underline flex items-center space-x-1">
+                        <span>Open Full Laboratory</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+                    </a>
+                    <button type="submit" id="submitSandboxBtn" class="px-5 py-2 bg-stone-900 hover:bg-black text-white rounded font-mono text-xs uppercase tracking-wider transition shadow-sm flex items-center space-x-1.5">
+                        <span id="sandboxBtnText">Analyze Excerpt</span>
                         <i id="sandboxSpinner" class="fa-solid fa-circle-notch animate-spin hidden ml-1"></i>
                     </button>
                 </div>
@@ -293,26 +355,130 @@
         </div>
     </div>
 
+    <!-- Global Exact Post Inspector Modal (Paper Style) -->
+    <div id="exactPostModal" class="fixed inset-0 z-50 hidden bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white border border-stone-300 rounded-lg max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative font-sans max-h-[90vh] overflow-y-auto">
+            <button onclick="closeExactPostModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-800 text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <!-- Modal Header -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200">
+                <div class="flex items-center space-x-2 font-mono text-xs">
+                    <span id="modalPlatformBadge" class="px-2 py-0.5 rounded font-semibold text-[11px] bg-stone-900 text-white">X</span>
+                    <span id="modalAuthorName" class="font-bold text-stone-900">Author</span>
+                    <span class="text-stone-300">•</span>
+                    <span id="modalPublishedAt" class="text-stone-500">Date</span>
+                </div>
+                <span id="modalSentimentBadge" class="stamp-badge px-2.5 py-0.5 rounded">SENTIMENT</span>
+            </div>
+
+            <!-- Headline -->
+            <h2 id="modalHeadline" class="text-xl sm:text-2xl font-serif font-bold text-stone-900 leading-tight"></h2>
+
+            <!-- Candidate & State Banner -->
+            <div id="modalCandidateRow" class="mt-2 text-xs font-mono text-stone-600 hidden">
+                Candidate: <strong id="modalCandidateName" class="text-stone-900"></strong>
+            </div>
+
+            <!-- Exact Full Body -->
+            <div class="my-5 p-5 bg-stone-50 rounded border border-stone-200">
+                <span class="font-mono text-[10px] uppercase tracking-widest text-stone-400 block mb-1.5 font-semibold">Exact Recorded Dispatch:</span>
+                <p id="modalFullContent" class="text-sm sm:text-base text-stone-900 leading-relaxed font-sans whitespace-pre-line select-text"></p>
+            </div>
+
+            <!-- Sentiment Diagnostic Breakdown -->
+            <div class="grid grid-cols-4 gap-2 text-center font-mono text-xs mb-5">
+                <div class="p-2 bg-stone-50 rounded border border-stone-200">
+                    <span class="text-[10px] text-stone-400 block">POLARITY</span>
+                    <span id="modalScore" class="font-bold text-stone-900">0.00</span>
+                </div>
+                <div class="p-2 bg-sage-50 rounded border border-sage-200">
+                    <span class="text-[10px] text-sage-600 block">FAVORABLE</span>
+                    <span id="modalPos" class="font-bold text-sage-700">0%</span>
+                </div>
+                <div class="p-2 bg-stone-50 rounded border border-stone-200">
+                    <span class="text-[10px] text-slateink-600 block">NEUTRAL</span>
+                    <span id="modalNeu" class="font-bold text-slateink-700">0%</span>
+                </div>
+                <div class="p-2 bg-rust-50 rounded border border-rust-200">
+                    <span class="text-[10px] text-rust-600 block">CRITICAL</span>
+                    <span id="modalNeg" class="font-bold text-rust-700">0%</span>
+                </div>
+            </div>
+
+            <!-- Outbound Action Bar -->
+            <div class="pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
+                <a id="modalStandaloneLink" href="#" class="text-stone-700 hover:text-stone-900 underline flex items-center space-x-1">
+                    <span>Open Standalone Record</span>
+                    <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
+                </a>
+                <a id="modalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
+                    <span id="modalExternalBtnText">Open Live Source</span>
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script>
-        // Modal toggles
+        // Modal toggles & backdrop handlers
         const collectModal = document.getElementById('collectModal');
         const openCollectBtn = document.getElementById('openCollectModalBtn');
         const closeCollectBtn = document.getElementById('closeCollectModal');
         const cancelCollectBtn = document.getElementById('cancelCollectBtn');
 
-        openCollectBtn?.addEventListener('click', () => collectModal.classList.remove('hidden'));
-        closeCollectBtn?.addEventListener('click', () => collectModal.classList.add('hidden'));
-        cancelCollectBtn?.addEventListener('click', () => collectModal.classList.add('hidden'));
+        openCollectBtn?.addEventListener('click', () => collectModal?.classList.remove('hidden'));
+        closeCollectBtn?.addEventListener('click', () => collectModal?.classList.add('hidden'));
+        cancelCollectBtn?.addEventListener('click', () => collectModal?.classList.add('hidden'));
+
+        collectModal?.addEventListener('click', function(e) {
+            if (e.target === collectModal) collectModal.classList.add('hidden');
+        });
 
         const sandboxModal = document.getElementById('sandboxModal');
         const openSandboxBtn = document.getElementById('openSandboxModalBtn');
         const closeSandboxBtn = document.getElementById('closeSandboxModal');
 
-        openSandboxBtn?.addEventListener('click', () => sandboxModal.classList.remove('hidden'));
-        closeSandboxBtn?.addEventListener('click', () => sandboxModal.classList.add('hidden'));
+        openSandboxBtn?.addEventListener('click', () => {
+            sandboxModal?.classList.remove('hidden');
+            document.getElementById('sandboxText')?.focus();
+        });
+        closeSandboxBtn?.addEventListener('click', () => sandboxModal?.classList.add('hidden'));
 
-        // Collect Form
+        sandboxModal?.addEventListener('click', function(e) {
+            if (e.target === sandboxModal) sandboxModal.classList.add('hidden');
+        });
+
+        const exactPostModal = document.getElementById('exactPostModal');
+        function closeExactPostModal() {
+            exactPostModal?.classList.add('hidden');
+        }
+        exactPostModal?.addEventListener('click', function(e) {
+            if (e.target === exactPostModal) closeExactPostModal();
+        });
+
+        // Close any modal on ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                collectModal?.classList.add('hidden');
+                sandboxModal?.classList.add('hidden');
+                exactPostModal?.classList.add('hidden');
+            }
+        });
+
+        // Helper to load sample text into the sandbox modal
+        function setSandboxSample(text, engine) {
+            document.getElementById('sandboxText').value = text;
+            const radios = document.getElementsByName('sandbox_engine');
+            for (const r of radios) {
+                if (r.value === engine) r.checked = true;
+            }
+            document.getElementById('sandboxForm').dispatchEvent(new Event('submit'));
+        }
+
+        // Collect Form Handler
         document.getElementById('collectForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             const platform = document.getElementById('collectPlatform').value;
@@ -358,16 +524,28 @@
             }
         });
 
-        // Sandbox Form
+        // Test Analyzer (Sandbox) Form Handler
         document.getElementById('sandboxForm')?.addEventListener('submit', async function(e) {
             e.preventDefault();
             const text = document.getElementById('sandboxText').value.trim();
-            const engine = document.querySelector('input[name="sandbox_engine"]:checked').value;
+            const engine = document.querySelector('input[name="sandbox_engine"]:checked')?.value || 'VADER';
             const spinner = document.getElementById('sandboxSpinner');
+            const btnText = document.getElementById('sandboxBtnText');
+            const submitBtn = document.getElementById('submitSandboxBtn');
             const resultBox = document.getElementById('sandboxResult');
+            const errorBox = document.getElementById('sandboxError');
+            const errorMsg = document.getElementById('sandboxErrorMsg');
 
-            if (!text) return;
+            if (!text) {
+                errorBox.classList.remove('hidden');
+                errorMsg.innerText = "Please enter some text or click a sample quote above.";
+                return;
+            }
+
+            errorBox.classList.add('hidden');
             spinner.classList.remove('hidden');
+            btnText.innerText = engine === 'TRANSFORMERS' ? "Analyzing with BERT..." : "Analyzing with VADER...";
+            submitBtn.disabled = true;
 
             try {
                 const response = await fetch("{% url 'tracker:api_test_sentiment' %}", {
@@ -381,28 +559,119 @@
                 const data = await response.json();
                 if (data.success) {
                     const res = data.result;
+                    const ent = data.detected_entity;
                     resultBox.classList.remove('hidden');
-                    document.getElementById('resultScore').innerText = (res.score > 0 ? '+' : '') + res.score.toFixed(2);
-                    document.getElementById('resPos').innerText = (res.pos * 100).toFixed(0) + '%';
-                    document.getElementById('resNeu').innerText = (res.neu * 100).toFixed(0) + '%';
-                    document.getElementById('resNeg').innerText = (res.neg * 100).toFixed(0) + '%';
+
+                    const score = res.score;
+                    document.getElementById('resultScore').innerText = (score > 0 ? '+' : '') + score.toFixed(2);
+                    
+                    const posPct = (res.pos * 100).toFixed(0);
+                    const neuPct = (res.neu * 100).toFixed(0);
+                    const negPct = (res.neg * 100).toFixed(0);
+
+                    document.getElementById('resPos').innerText = posPct + '%';
+                    document.getElementById('resNeu').innerText = neuPct + '%';
+                    document.getElementById('resNeg').innerText = negPct + '%';
+
+                    document.getElementById('sbBarPos').style.width = posPct + '%';
+                    document.getElementById('sbBarNeu').style.width = neuPct + '%';
+                    document.getElementById('sbBarNeg').style.width = negPct + '%';
 
                     const badge = document.getElementById('resultBadge');
                     badge.innerText = `${res.label} • ${res.engine}`;
                     if (res.label === 'Positive') {
-                        badge.className = "stamp-badge px-2 py-0.5 rounded bg-sage-50 text-sage-700 border border-sage-200";
+                        badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-sage-50 text-sage-700 border border-sage-300 font-semibold";
                     } else if (res.label === 'Negative') {
-                        badge.className = "stamp-badge px-2 py-0.5 rounded bg-rust-50 text-rust-700 border border-rust-200";
+                        badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-rust-50 text-rust-700 border border-rust-300 font-semibold";
                     } else {
-                        badge.className = "stamp-badge px-2 py-0.5 rounded bg-slateink-50 text-slateink-700 border border-slateink-200";
+                        badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-slateink-50 text-slateink-700 border border-slateink-300 font-semibold";
                     }
+
+                    // Entity display
+                    const entityRow = document.getElementById('sbEntityRow');
+                    const entityText = document.getElementById('sbEntityText');
+                    if (ent && ent.candidate_name) {
+                        entityRow.classList.remove('hidden');
+                        entityText.innerText = `${ent.candidate_name} (${ent.candidate_party || ''}) — ${ent.state_name || ''} State`;
+                    } else if (ent && ent.state_name) {
+                        entityRow.classList.remove('hidden');
+                        entityText.innerText = `${ent.state_name} State Race`;
+                    } else {
+                        entityRow.classList.add('hidden');
+                    }
+                } else {
+                    errorBox.classList.remove('hidden');
+                    errorMsg.innerText = data.error || 'Failed to inspect sentiment.';
                 }
             } catch (err) {
-                console.error(err);
+                errorBox.classList.remove('hidden');
+                errorMsg.innerText = "Network error communicating with server.";
             } finally {
                 spinner.classList.add('hidden');
+                btnText.innerText = "Analyze Excerpt";
+                submitBtn.disabled = false;
             }
         });
+
+        // Global Exact Post Inspector Function (usable from any page)
+        async function openExactPostModal(postId) {
+            try {
+                const resp = await fetch(`/api/post/${postId}/`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+
+                // Populate fields
+                document.getElementById('modalPlatformBadge').innerText = data.platform;
+                document.getElementById('modalAuthorName').innerText = data.author_name;
+                document.getElementById('modalPublishedAt').innerText = data.published_at;
+                document.getElementById('modalHeadline').innerText = data.headline;
+                document.getElementById('modalFullContent').innerText = data.content;
+                document.getElementById('modalScore').innerText = (data.sentiment_score > 0 ? '+' : '') + data.sentiment_score.toFixed(2);
+                document.getElementById('modalPos').innerText = data.pos_score + '%';
+                document.getElementById('modalNeu').innerText = data.neu_score + '%';
+                document.getElementById('modalNeg').innerText = data.neg_score + '%';
+
+                // Sentiment Badge
+                const badge = document.getElementById('modalSentimentBadge');
+                badge.innerText = `${data.sentiment_label} (${data.sentiment_score.toFixed(2)})`;
+                if (data.sentiment_label === 'Positive') {
+                    badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-sage-50 text-sage-700 border border-sage-300 font-semibold";
+                } else if (data.sentiment_label === 'Negative') {
+                    badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-rust-50 text-rust-700 border border-rust-300 font-semibold";
+                } else {
+                    badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-slateink-50 text-slateink-700 border border-slateink-300 font-semibold";
+                }
+
+                // Candidate row
+                const candRow = document.getElementById('modalCandidateRow');
+                if (data.candidate_name) {
+                    candRow.classList.remove('hidden');
+                    document.getElementById('modalCandidateName').innerText = `${data.candidate_name} (${data.candidate_party || ''}) - ${data.state_name || ''} State`;
+                } else {
+                    candRow.classList.add('hidden');
+                }
+
+                // Links
+                document.getElementById('modalStandaloneLink').href = `/post/${data.id}/`;
+
+                const extLink = document.getElementById('modalExternalLink');
+                const extText = document.getElementById('modalExternalBtnText');
+                extLink.href = data.working_url;
+                if (data.platform === 'X') {
+                    extText.innerText = "View Live Stream on X";
+                } else if (data.platform === 'Facebook') {
+                    extText.innerText = "View on Facebook";
+                } else if (data.platform === 'YouTube') {
+                    extText.innerText = (data.working_url && data.working_url.includes('&lc=')) ? "View Comment on YouTube" : "Watch on YouTube";
+                } else {
+                    extText.innerText = "Read Full Source Article";
+                }
+
+                exactPostModal?.classList.remove('hidden');
+            } catch (err) {
+                console.error("Failed to load post details:", err);
+            }
+        }
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

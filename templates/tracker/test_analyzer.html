@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block title %}NLP Sentiment Polarity Laboratory — The 2027 Gubernatorial Dispatch{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Masthead -->
+    <div class="paper-card rounded-lg p-6 sm:p-8">
+        <div class="flex items-center space-x-2 font-mono text-xs text-stone-500 uppercase tracking-widest mb-1">
+            <a href="{% url 'tracker:dashboard' %}" class="hover:text-ink-900 transition flex items-center space-x-1">
+                <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                <span>Dashboard</span>
+            </a>
+            <span>/</span>
+            <span class="text-stone-900 font-semibold">NLP Laboratory Workbench</span>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between gap-2 border-b border-stone-200 pb-4">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-serif font-bold text-ink-900 tracking-tight">
+                    Sentiment Polarity Inspector & Entity Extractor
+                </h1>
+                <p class="font-serif italic text-sm text-ink-500 mt-1">
+                    Evaluate any custom statement, debate excerpt, or editorial through calibrated rule-based and deep neural NLP models.
+                </p>
+            </div>
+            <span class="font-mono text-xs text-stone-500 bg-stone-100 px-2.5 py-1 rounded border border-stone-200 shrink-0">
+                Models: VADER & DistilBERT
+            </span>
+        </div>
+
+        <!-- Sample Excerpts Strip -->
+        <div class="pt-4">
+            <span class="font-mono text-[10px] uppercase tracking-wider text-stone-400 font-semibold block mb-2">
+                Click to load sample 2027 political dispatches:
+            </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 font-mono text-xs">
+                {% for excerpt, tag, eng in sample_excerpts %}
+                <button type="button" onclick="loadSampleText('{{ excerpt|escapejs }}', '{{ eng }}')" class="p-2.5 text-left bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded transition group">
+                    <div class="flex items-center justify-between text-[10px] text-stone-400 mb-1">
+                        <span class="font-semibold text-stone-700">{{ tag }}</span>
+                        <span class="px-1.5 py-0.2 rounded bg-white border border-stone-200 text-stone-500">{{ eng }}</span>
+                    </div>
+                    <p class="font-serif text-xs text-stone-800 line-clamp-2 leading-relaxed">
+                        "{{ excerpt }}"
+                    </p>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Laboratory Workbench -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Input Formulation Form (7 Cols) -->
+        <div class="lg:col-span-7 paper-card rounded-lg p-6 space-y-4">
+            <h2 class="font-serif text-lg font-bold text-ink-900 border-b border-stone-200 pb-2">
+                Input Text Formulation
+            </h2>
+
+            <form id="labForm" class="space-y-4 text-xs font-sans">
+                <!-- Engine Selection -->
+                <div>
+                    <label class="block font-mono uppercase tracking-wider text-stone-500 font-semibold mb-1.5 text-[11px]">
+                        Select Classification Engine
+                    </label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-start space-x-2.5 p-3 rounded-md border border-stone-300 bg-stone-50 cursor-pointer hover:bg-stone-100 transition has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50/80">
+                            <input type="radio" name="lab_engine" value="VADER" checked class="mt-0.5 text-stone-900 focus:ring-0">
+                            <div>
+                                <span class="font-mono text-xs font-bold text-stone-900 block">NLTK VADER</span>
+                                <span class="text-[11px] text-stone-500 font-serif leading-tight block mt-0.5">
+                                    Fast, social-slang tuned, rule-based lexicon. Instant results.
+                                </span>
+                            </div>
+                        </label>
+                        <label class="flex items-start space-x-2.5 p-3 rounded-md border border-stone-300 bg-stone-50 cursor-pointer hover:bg-stone-100 transition has-[:checked]:border-stone-900 has-[:checked]:bg-stone-50/80">
+                            <input type="radio" name="lab_engine" value="TRANSFORMERS" class="mt-0.5 text-stone-900 focus:ring-0">
+                            <div>
+                                <span class="font-mono text-xs font-bold text-stone-900 block">Transformers / BERT</span>
+                                <span class="text-[11px] text-stone-500 font-serif leading-tight block mt-0.5">
+                                    Deep contextual transformer (DistilBERT). High semantic comprehension.
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Text Area -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="font-mono uppercase tracking-wider text-stone-500 font-semibold text-[11px]">
+                            Discourse Excerpt or Comment
+                        </label>
+                        <button type="button" onclick="document.getElementById('labText').value = '';" class="font-mono text-[10px] text-stone-400 hover:text-stone-700 underline">
+                            Clear
+                        </button>
+                    </div>
+                    <textarea id="labText" rows="5" class="w-full bg-stone-50 border border-stone-300 rounded-md p-3.5 text-ink-900 font-serif text-sm leading-relaxed placeholder-stone-400 focus:outline-none focus:border-stone-700 focus:bg-white transition" placeholder="Type or paste any Nigerian political statement, tweet, news headline, or citizen reaction..."></textarea>
+                </div>
+
+                <!-- Error Warning Alert -->
+                <div id="labError" class="hidden p-3 rounded-md bg-rust-50 border border-rust-200 text-rust-700 font-mono text-xs">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                    <span id="labErrorText">Please enter some text to analyze.</span>
+                </div>
+
+                <!-- Submit Bar -->
+                <div class="pt-2 flex items-center justify-between">
+                    <span id="labStatusText" class="font-mono text-xs text-stone-400">
+                        Ready to inspect.
+                    </span>
+                    <button type="submit" id="labSubmitBtn" class="px-6 py-2.5 bg-stone-900 hover:bg-black text-white rounded font-mono text-xs uppercase tracking-wider transition shadow-sm flex items-center space-x-2">
+                        <span id="labBtnText">Analyze Statement</span>
+                        <i id="labSpinner" class="fa-solid fa-circle-notch animate-spin hidden ml-1"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Diagnostic Feedback Card (5 Cols) -->
+        <div class="lg:col-span-5 space-y-4">
+
+            <!-- Result Card -->
+            <div id="labResultCard" class="paper-card rounded-lg p-6 space-y-5">
+                <div class="flex items-center justify-between border-b border-stone-200 pb-3">
+                    <span class="font-mono uppercase text-[10px] text-stone-400 tracking-widest font-semibold">
+                        CLASSIFICATION VERDICT
+                    </span>
+                    <span id="labResultBadge" class="stamp-badge px-2.5 py-0.5 rounded font-semibold text-xs">
+                        PENDING
+                    </span>
+                </div>
+
+                <!-- Large Polarity Score Display -->
+                <div>
+                    <div class="flex items-baseline space-x-3">
+                        <span id="labResultScore" class="text-4xl font-serif font-bold text-ink-900">0.00</span>
+                        <span class="font-mono text-xs text-stone-500">Compound Polarity Index [-1.0 to +1.0]</span>
+                    </div>
+                    <!-- Visual Meter Bar -->
+                    <div class="w-full bg-stone-200 h-2 rounded-full mt-3 overflow-hidden flex">
+                        <div id="labBarNeg" class="bg-rust-500 h-full transition-all duration-500" style="width: 0%"></div>
+                        <div id="labBarNeu" class="bg-stone-400 h-full transition-all duration-500" style="width: 100%"></div>
+                        <div id="labBarPos" class="bg-sage-600 h-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- 3-Component Score Breakdown -->
+                <div class="grid grid-cols-3 gap-2 font-mono text-xs text-center">
+                    <div class="p-2.5 bg-sage-50/70 border border-sage-200 rounded">
+                        <span class="text-[10px] text-sage-600 uppercase block font-semibold">Positive</span>
+                        <span id="labResPos" class="text-base font-bold text-sage-700">0%</span>
+                    </div>
+                    <div class="p-2.5 bg-stone-50 border border-stone-200 rounded">
+                        <span class="text-[10px] text-slateink-600 uppercase block font-semibold">Neutral</span>
+                        <span id="labResNeu" class="text-base font-bold text-slateink-700">100%</span>
+                    </div>
+                    <div class="p-2.5 bg-rust-50/70 border border-rust-200 rounded">
+                        <span class="text-[10px] text-rust-600 uppercase block font-semibold">Negative</span>
+                        <span id="labResNeg" class="text-base font-bold text-rust-700">0%</span>
+                    </div>
+                </div>
+
+                <!-- Entity Recognition Output -->
+                <div class="pt-3 border-t border-stone-200 font-mono text-xs">
+                    <span class="text-[10px] uppercase text-stone-400 tracking-wider block mb-1 font-semibold">
+                        Identified Entities & Alignment:
+                    </span>
+                    <div id="labEntityContainer" class="p-3 bg-stone-50 rounded border border-stone-200">
+                        <span class="text-stone-400 italic">No specific candidate or state detected in excerpt.</span>
+                    </div>
+                </div>
+
+                <!-- Engine Provenance Stamp -->
+                <div class="pt-2 border-t border-stone-100 flex items-center justify-between font-mono text-[11px] text-stone-400">
+                    <span>Engine: <strong id="labEngineUsed" class="text-stone-700">VADER</strong></span>
+                    <span id="labTimestamp">Awaiting input</span>
+                </div>
+            </div>
+
+            <!-- Methodology Reference Card -->
+            <div class="p-4 rounded-lg border border-stone-200 bg-[#FBFBF9] font-mono text-xs text-stone-600 space-y-2">
+                <span class="font-semibold text-stone-800 uppercase tracking-wide text-[10px] block">
+                    HOW THE SCORING WORKS
+                </span>
+                <p class="font-serif text-xs leading-relaxed text-stone-600">
+                    <strong>Compound Polarity:</strong> Computed by summing the valence scores of recognized words, normalized between -1.0 (extreme negative) and +1.0 (extreme positive). Scores ≥ +0.05 classify as Positive, ≤ -0.05 as Negative, and values between as Neutral.
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function loadSampleText(text, engine) {
+        document.getElementById('labText').value = text;
+        const radios = document.getElementsByName('lab_engine');
+        for (const r of radios) {
+            if (r.value === engine) {
+                r.checked = true;
+            }
+        }
+        document.getElementById('labForm').dispatchEvent(new Event('submit'));
+    }
+
+    document.getElementById('labForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const text = document.getElementById('labText').value.trim();
+        const engine = document.querySelector('input[name="lab_engine"]:checked')?.value || 'VADER';
+        const errorBox = document.getElementById('labError');
+        const spinner = document.getElementById('labSpinner');
+        const btnText = document.getElementById('labBtnText');
+        const submitBtn = document.getElementById('labSubmitBtn');
+        const statusText = document.getElementById('labStatusText');
+
+        if (!text) {
+            errorBox.classList.remove('hidden');
+            document.getElementById('labErrorText').innerText = "Please enter some text or click one of the sample statements above.";
+            return;
+        }
+
+        errorBox.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        btnText.innerText = "Processing...";
+        submitBtn.disabled = true;
+        statusText.innerText = engine === 'TRANSFORMERS' ? "Running Transformers / DistilBERT inference..." : "Evaluating lexicon polarity with VADER...";
+
+        try {
+            const resp = await fetch("{% url 'tracker:api_test_sentiment' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text, engine })
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                const res = data.result;
+                const ent = data.detected_entity;
+
+                // Score Display
+                const score = res.score;
+                document.getElementById('labResultScore').innerText = (score > 0 ? '+' : '') + score.toFixed(2);
+
+                // Badge
+                const badge = document.getElementById('labResultBadge');
+                badge.innerText = `${res.label.toUpperCase()} (${score.toFixed(2)})`;
+                if (res.label === 'Positive') {
+                    badge.className = "stamp-badge px-2.5 py-0.5 rounded font-semibold text-xs bg-sage-50 text-sage-700 border border-sage-300";
+                } else if (res.label === 'Negative') {
+                    badge.className = "stamp-badge px-2.5 py-0.5 rounded font-semibold text-xs bg-rust-50 text-rust-700 border border-rust-300";
+                } else {
+                    badge.className = "stamp-badge px-2.5 py-0.5 rounded font-semibold text-xs bg-slateink-50 text-slateink-700 border border-slateink-300";
+                }
+
+                // Breakdown
+                const posPct = (res.pos * 100).toFixed(1);
+                const neuPct = (res.neu * 100).toFixed(1);
+                const negPct = (res.neg * 100).toFixed(1);
+                document.getElementById('labResPos').innerText = posPct + '%';
+                document.getElementById('labResNeu').innerText = neuPct + '%';
+                document.getElementById('labResNeg').innerText = negPct + '%';
+
+                // Bar
+                document.getElementById('labBarPos').style.width = posPct + '%';
+                document.getElementById('labBarNeu').style.width = neuPct + '%';
+                document.getElementById('labBarNeg').style.width = negPct + '%';
+
+                // Entity
+                const entityContainer = document.getElementById('labEntityContainer');
+                if (ent && ent.candidate_name) {
+                    entityContainer.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full" style="background-color: ${ent.candidate_color || '#3B82F6'}"></span>
+                            <strong class="text-stone-900">${ent.candidate_name}</strong>
+                            <span class="text-stone-500">(${ent.candidate_party || 'Party'})</span>
+                            <span class="text-stone-300">•</span>
+                            <span class="text-stone-700">${ent.state_name || 'State'} Race</span>
+                        </div>
+                    `;
+                } else if (ent && ent.state_name) {
+                    entityContainer.innerHTML = `
+                        <div class="flex items-center space-x-2 text-stone-800">
+                            <i class="fa-solid fa-location-dot text-stone-500"></i>
+                            <strong>${ent.state_name} State 2027 Gubernatorial Race</strong>
+                        </div>
+                    `;
+                } else {
+                    entityContainer.innerHTML = `<span class="text-stone-400 italic">General political discourse (no specific candidate alias recognized).</span>`;
+                }
+
+                document.getElementById('labEngineUsed').innerText = res.engine;
+                document.getElementById('labTimestamp').innerText = new Date().toLocaleTimeString();
+                statusText.innerText = "Classification complete.";
+            } else {
+                errorBox.classList.remove('hidden');
+                document.getElementById('labErrorText').innerText = data.error || "Analysis failed.";
+                statusText.innerText = "Error encountered.";
+            }
+        } catch (err) {
+            errorBox.classList.remove('hidden');
+            document.getElementById('labErrorText').innerText = "Network error communicating with server.";
+            statusText.innerText = "Failed to reach server.";
+        } finally {
+            spinner.classList.add('hidden');
+            btnText.innerText = "Analyze Statement";
+            submitBtn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

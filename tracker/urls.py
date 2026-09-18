@@ -5,6 +5,8 @@ app_name = 'tracker'
 
 urlpatterns = [
     path('', views.dashboard_view, name='dashboard'),
+    path('dispatches/', views.dispatches_view, name='dispatches'),
+    path('test-analyzer/', views.test_analyzer_view, name='test_analyzer'),
     path('candidate/<int:candidate_id>/', views.candidate_detail_view, name='candidate_detail'),
     path('post/<int:post_id>/', views.post_detail_view, name='post_detail'),
     path('api/post/<int:post_id>/', views.post_detail_json, name='post_detail_json'),

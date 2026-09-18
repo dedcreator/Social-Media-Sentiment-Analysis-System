@@ -1,0 +1,343 @@
+{% extends 'base.html' %}
+
+{% block title %}All Dispatches ({{ total_count }}) — The 2027 Gubernatorial Wire Archive{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Masthead & Metric Strip -->
+    <div class="paper-card rounded-lg p-6 sm:p-8">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-stone-200">
+            <div>
+                <div class="flex items-center space-x-2 font-mono text-xs text-stone-500 uppercase tracking-widest mb-1">
+                    <a href="{% url 'tracker:dashboard' %}" class="hover:text-ink-900 transition flex items-center space-x-1">
+                        <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <span>/</span>
+                    <span class="text-stone-900 font-semibold">Exhaustive Intelligence Wire</span>
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-serif font-bold text-ink-900 tracking-tight">
+                    All Recorded Dispatches & Commentary
+                </h1>
+                <p class="font-serif italic text-sm text-ink-500 mt-1">
+                    Complete public intelligence feed comprising {{ total_count }} verified articles, official statements, citizen posts, and video discussions.
+                </p>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center space-x-2">
+                <a href="{% url 'tracker:export_csv' %}?{{ query_string }}" class="px-3.5 py-2 rounded bg-white hover:bg-stone-50 text-ink-800 border border-stone-300 font-mono text-xs uppercase tracking-wider transition shadow-2xs flex items-center space-x-1.5" title="Export this filtered slice to CSV">
+                    <i class="fa-solid fa-download text-stone-500"></i>
+                    <span>Export CSV</span>
+                </a>
+                <button type="button" onclick="document.getElementById('openSandboxModalBtn').click()" class="px-3.5 py-2 rounded bg-stone-900 hover:bg-stone-800 text-white font-mono text-xs uppercase tracking-wider transition shadow-2xs flex items-center space-x-1.5">
+                    <i class="fa-solid fa-pen-fancy text-[11px]"></i>
+                    <span>Test Analyzer</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtered Dataset Statistics -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 font-mono text-xs">
+            <div class="p-3 bg-stone-50 rounded border border-stone-200">
+                <span class="text-[10px] uppercase tracking-wider text-stone-400 block font-semibold">Matched Records</span>
+                <span class="text-xl font-bold text-ink-900">{{ total_count }}</span>
+                <span class="text-stone-400 text-[10px] block mt-0.5">Total across active filters</span>
+            </div>
+            <div class="p-3 bg-sage-50/70 rounded border border-sage-200">
+                <span class="text-[10px] uppercase tracking-wider text-sage-600 block font-semibold">Favorable (Positive)</span>
+                <span class="text-xl font-bold text-sage-700">{{ pos_count }}</span>
+                <span class="text-sage-600 text-[10px] block mt-0.5">{{ pos_pct }}% of matched wire</span>
+            </div>
+            <div class="p-3 bg-stone-50 rounded border border-stone-200">
+                <span class="text-[10px] uppercase tracking-wider text-slateink-600 block font-semibold">Neutral / Reports</span>
+                <span class="text-xl font-bold text-slateink-700">{{ neu_count }}</span>
+                <span class="text-slateink-600 text-[10px] block mt-0.5">{{ neu_pct }}% of matched wire</span>
+            </div>
+            <div class="p-3 bg-rust-50/70 rounded border border-rust-200">
+                <span class="text-[10px] uppercase tracking-wider text-rust-600 block font-semibold">Critical (Negative)</span>
+                <span class="text-xl font-bold text-rust-700">{{ neg_count }}</span>
+                <span class="text-rust-600 text-[10px] block mt-0.5">{{ neg_pct }}% of matched wire</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="paper-card rounded-lg p-5">
+        <form method="GET" action="{% url 'tracker:dispatches' %}" class="space-y-4">
+            <!-- Keyword Search Row -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" name="q" value="{{ q }}" placeholder="Search dispatches by candidate name, headline text, policy keyword, or author..." class="w-full pl-9 pr-4 py-2 bg-stone-50 border border-stone-300 rounded text-ink-900 text-xs font-sans placeholder-stone-400 focus:outline-none focus:border-stone-600 focus:bg-white transition">
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <button type="submit" class="px-5 py-2 bg-stone-900 text-white rounded font-mono text-xs uppercase tracking-wider hover:bg-stone-800 transition flex items-center space-x-1.5 shadow-2xs">
+                        <i class="fa-solid fa-filter text-[10px]"></i>
+                        <span>Filter Wire</span>
+                    </button>
+                    {% if q or selected_candidate or selected_state or selected_platform or selected_sentiment or selected_engine or selected_sort != 'newest' %}
+                    <a href="{% url 'tracker:dispatches' %}" class="px-3.5 py-2 bg-white text-stone-600 border border-stone-300 rounded font-mono text-xs hover:bg-stone-100 transition" title="Clear all filters">
+                        <i class="fa-solid fa-rotate-left mr-1"></i> Reset
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Multi-Filter Dropdowns Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-2 border-t border-stone-100 font-mono text-xs">
+                <!-- Candidate Filter -->
+                <div>
+                    <label class="block text-[10px] uppercase text-stone-400 font-semibold mb-1">Candidate</label>
+                    <select name="candidate" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-800 focus:outline-none focus:border-stone-600 text-xs">
+                        <option value="">All Candidates</option>
+                        {% for cand in candidates_list %}
+                        <option value="{{ cand.id }}" {% if selected_candidate == cand.id|stringformat:"i" %}selected{% endif %}>
+                            {{ cand.name }} ({{ cand.party }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- State Race -->
+                <div>
+                    <label class="block text-[10px] uppercase text-stone-400 font-semibold mb-1">State Race</label>
+                    <select name="state" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-800 focus:outline-none focus:border-stone-600 text-xs">
+                        <option value="">All States</option>
+                        {% for st in states_list %}
+                        <option value="{{ st.id }}" {% if selected_state == st.id|stringformat:"i" %}selected{% endif %}>
+                            {{ st.state }} State
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Platform -->
+                <div>
+                    <label class="block text-[10px] uppercase text-stone-400 font-semibold mb-1">Platform</label>
+                    <select name="platform" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-800 focus:outline-none focus:border-stone-600 text-xs">
+                        <option value="">All Sources</option>
+                        {% for plat_val, plat_name in platforms_list %}
+                        <option value="{{ plat_val }}" {% if selected_platform == plat_val %}selected{% endif %}>
+                            {{ plat_val }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Sentiment -->
+                <div>
+                    <label class="block text-[10px] uppercase text-stone-400 font-semibold mb-1">Polarity</label>
+                    <select name="sentiment" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-800 focus:outline-none focus:border-stone-600 text-xs">
+                        <option value="">All Polarities</option>
+                        <option value="Positive" {% if selected_sentiment == 'Positive' %}selected{% endif %}>Positive</option>
+                        <option value="Neutral" {% if selected_sentiment == 'Neutral' %}selected{% endif %}>Neutral</option>
+                        <option value="Negative" {% if selected_sentiment == 'Negative' %}selected{% endif %}>Negative</option>
+                    </select>
+                </div>
+
+                <!-- Engine -->
+                <div>
+                    <label class="block text-[10px] uppercase text-stone-400 font-semibold mb-1">NLP Engine</label>
+                    <select name="engine" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-800 focus:outline-none focus:border-stone-600 text-xs">
+                        <option value="">All Engines</option>
+                        <option value="VADER" {% if selected_engine == 'VADER' %}selected{% endif %}>VADER</option>
+                        <option value="TRANSFORMERS" {% if selected_engine == 'TRANSFORMERS' %}selected{% endif %}>Transformers / BERT</option>
+                    </select>
+                </div>
+
+                <!-- Sort -->
+                <div>
+                    <label class="block text-[10px] uppercase text-stone-400 font-semibold mb-1">Order By</label>
+                    <select name="sort" class="w-full bg-stone-50 border border-stone-300 rounded px-2.5 py-1.5 text-ink-800 focus:outline-none focus:border-stone-600 text-xs">
+                        <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest First</option>
+                        <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Oldest First</option>
+                        <option value="sentiment_high" {% if selected_sort == 'sentiment_high' %}selected{% endif %}>Most Positive</option>
+                        <option value="sentiment_low" {% if selected_sort == 'sentiment_low' %}selected{% endif %}>Most Negative</option>
+                        <option value="engagement" {% if selected_sort == 'engagement' %}selected{% endif %}>Most Reactions</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- The Dispatches Wire Listing -->
+    <div class="paper-card rounded-lg p-6">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-stone-200 font-mono text-xs text-stone-500">
+            <span>
+                Showing <strong>{{ page_obj.start_index|default:0 }}–{{ page_obj.end_index|default:0 }}</strong> of <strong>{{ total_count }}</strong> dispatches
+            </span>
+            <span>
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages|default:1 }}
+            </span>
+        </div>
+
+        <div class="space-y-4">
+            {% for post in page_obj %}
+            <article class="p-4 sm:p-5 rounded-lg border border-stone-200 bg-white hover:border-stone-400 hover:shadow-xs transition duration-150">
+                <!-- Metadata Top Row -->
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-2.5 mb-2.5 border-b border-stone-100 font-mono text-xs">
+                    <!-- Platform & Author -->
+                    <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded font-semibold text-[11px]
+                            {% if post.platform == 'X' %}bg-stone-900 text-white
+                            {% elif post.platform == 'Facebook' %}bg-blue-600 text-white
+                            {% elif post.platform == 'YouTube' %}bg-red-600 text-white
+                            {% else %}bg-stone-100 text-stone-800 border border-stone-300{% endif %}">
+                            {% if post.platform == 'X' %}<i class="fa-brands fa-x-twitter"></i> <span>X (Twitter)</span>
+                            {% elif post.platform == 'Facebook' %}<i class="fa-brands fa-facebook"></i> <span>Facebook</span>
+                            {% elif post.platform == 'YouTube' %}<i class="fa-brands fa-youtube"></i> <span>YouTube</span>
+                            {% else %}<i class="fa-regular fa-newspaper"></i> <span>News Media</span>{% endif %}
+                        </span>
+                        <span class="font-bold text-stone-900">{{ post.author_name }}</span>
+                        {% if post.author_handle %}
+                        <span class="text-stone-400 text-[11px]">{{ post.author_handle }}</span>
+                        {% endif %}
+                        <span class="text-stone-300">•</span>
+                        <span class="text-stone-500" title="{{ post.published_at }}">{{ post.published_at|timesince }} ago</span>
+                    </div>
+
+                    <!-- Candidate Pill & Sentiment Badge -->
+                    <div class="flex items-center space-x-2">
+                        {% if post.candidate %}
+                        <a href="{% url 'tracker:candidate_detail' post.candidate.id %}" class="stamp-badge px-2 py-0.5 rounded bg-stone-50 text-stone-800 border border-stone-300 hover:bg-stone-100 transition">
+                            {{ post.candidate.name }} ({{ post.candidate.party }})
+                        </a>
+                        {% elif post.state_race %}
+                        <span class="stamp-badge px-2 py-0.5 rounded bg-stone-50 text-stone-600 border border-stone-200">
+                            {{ post.state_race.state }} State
+                        </span>
+                        {% endif %}
+
+                        <span class="stamp-badge px-2.5 py-0.5 rounded font-semibold
+                            {% if post.sentiment_label == 'Positive' %}bg-sage-50 text-sage-700 border border-sage-300
+                            {% elif post.sentiment_label == 'Negative' %}bg-rust-50 text-rust-700 border border-rust-300
+                            {% else %}bg-slateink-50 text-slateink-700 border border-slateink-300{% endif %}">
+                            {{ post.sentiment_label }} ({{ post.sentiment_score|floatformat:2 }})
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Headline & Content Excerpt -->
+                <div class="mt-1 cursor-pointer" onclick="openExactPostModal({{ post.id }})">
+                    <h3 class="text-base font-semibold text-stone-900 hover:text-stone-700 leading-snug tracking-tight font-sans flex items-start justify-between gap-2">
+                        <span>{{ post.clean_headline }}</span>
+                        <i class="fa-solid fa-expand text-[11px] text-stone-400 mt-1 opacity-0 group-hover:opacity-100 transition" title="Inspect Exact Post"></i>
+                    </h3>
+                    {% if post.clean_excerpt and post.clean_excerpt != post.clean_headline %}
+                    <p class="text-sm text-stone-600 font-sans leading-relaxed mt-1.5 line-clamp-2">
+                        {{ post.clean_excerpt }}
+                    </p>
+                    {% endif %}
+                </div>
+
+                <!-- Footer with Diagnostic Stats & Action Buttons -->
+                <div class="mt-3.5 pt-2.5 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-stone-500">
+                    <div class="flex items-center space-x-3 text-[11px]">
+                        <span>Engine: <strong class="font-semibold text-stone-700">{{ post.sentiment_engine }}</strong></span>
+                        <span>•</span>
+                        <span>Weights: <span class="text-sage-600">+{{ post.pos_score|floatformat:2 }}</span> / <span class="text-slateink-600">{{ post.neu_score|floatformat:2 }}</span> / <span class="text-rust-600">-{{ post.neg_score|floatformat:2 }}</span></span>
+                        <span>•</span>
+                        <span>Reactions: <strong class="font-semibold text-stone-700">{{ post.likes_count }}</strong></span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center space-x-2">
+                        <button type="button" onclick="openExactPostModal({{ post.id }})" class="inline-flex items-center space-x-1 px-3 py-1 rounded bg-white hover:bg-stone-100 text-stone-900 border border-stone-300 font-mono text-xs font-medium transition shadow-2xs">
+                            <i class="fa-regular fa-eye text-stone-600"></i>
+                            <span>View Exact Post</span>
+                        </button>
+
+                        {% if post.platform == 'X' %}
+                        <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 px-3 py-1 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs font-medium transition shadow-2xs">
+                            <i class="fa-brands fa-x-twitter text-[10px]"></i>
+                            <span>View on X</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5"></i>
+                        </a>
+                        {% elif post.platform == 'YouTube' %}
+                        <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 px-3 py-1 rounded bg-red-600 hover:bg-red-700 text-white font-mono text-xs font-medium transition shadow-2xs">
+                            <i class="fa-brands fa-youtube text-[10px]"></i>
+                            <span>Watch on YouTube</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5"></i>
+                        </a>
+                        {% elif post.platform == 'Facebook' %}
+                        <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white font-mono text-xs font-medium transition shadow-2xs">
+                            <i class="fa-brands fa-facebook text-[10px]"></i>
+                            <span>View on Facebook</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5"></i>
+                        </a>
+                        {% else %}
+                        <a href="{{ post.working_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-1 px-3 py-1 rounded bg-stone-800 hover:bg-stone-900 text-white font-mono text-xs font-medium transition shadow-2xs">
+                            <i class="fa-solid fa-newspaper text-[10px]"></i>
+                            <span>Read Article</span>
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] ml-0.5"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </article>
+            {% empty %}
+            <div class="text-center py-12 bg-stone-50 border border-stone-200 rounded-lg p-8">
+                <i class="fa-regular fa-newspaper text-3xl text-stone-300 mb-2"></i>
+                <h3 class="text-lg font-serif font-semibold text-stone-700">No dispatches match your query</h3>
+                <p class="text-xs text-stone-500 font-mono mt-1 max-w-md mx-auto">
+                    Try adjusting your keyword, resetting active candidate or platform filters, or run a new live feed ingestion.
+                </p>
+                <div class="mt-4 flex items-center justify-center space-x-2">
+                    <a href="{% url 'tracker:dispatches' %}" class="px-4 py-2 bg-stone-900 text-white rounded font-mono text-xs uppercase hover:bg-stone-800 transition">
+                        Reset All Filters
+                    </a>
+                    <button type="button" onclick="document.getElementById('openCollectModalBtn').click()" class="px-4 py-2 bg-white text-stone-800 border border-stone-300 rounded font-mono text-xs uppercase hover:bg-stone-50 transition">
+                        Ingest New Feeds
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Controls Bar -->
+        {% if page_obj.has_other_pages %}
+        <div class="mt-8 pt-5 border-t border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+            <span class="text-stone-500">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ total_count }} total entries)
+            </span>
+
+            <div class="inline-flex items-center space-x-1">
+                <!-- First & Previous -->
+                {% if page_obj.has_previous %}
+                <a href="?page=1{% if query_string %}&{{ query_string }}{% endif %}" class="px-2.5 py-1.5 rounded border border-stone-300 bg-white hover:bg-stone-50 text-stone-700" title="First Page">
+                    <i class="fa-solid fa-angles-left"></i>
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-3 py-1.5 rounded border border-stone-300 bg-white hover:bg-stone-50 text-stone-700">
+                    Previous
+                </a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded border border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed">Previous</span>
+                {% endif %}
+
+                <!-- Page Number Indicator -->
+                <span class="px-3 py-1.5 rounded border border-stone-900 bg-stone-900 text-white font-semibold">
+                    {{ page_obj.number }}
+                </span>
+
+                <!-- Next & Last -->
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-3 py-1.5 rounded border border-stone-300 bg-white hover:bg-stone-50 text-stone-700">
+                    Next
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}" class="px-2.5 py-1.5 rounded border border-stone-300 bg-white hover:bg-stone-50 text-stone-700" title="Last Page">
+                    <i class="fa-solid fa-angles-right"></i>
+                </a>
+                {% else %}
+                <span class="px-3 py-1.5 rounded border border-stone-200 bg-stone-50 text-stone-300 cursor-not-allowed">Next</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

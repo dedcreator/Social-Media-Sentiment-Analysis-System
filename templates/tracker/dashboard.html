@@ -351,14 +351,20 @@
 
     <!-- Section 4: Live Dispatch Wire (Real Posts Feed) -->
     <div class="paper-card rounded-lg p-6">
-        <div class="flex flex-col sm:flex-row sm:items-baseline justify-between pb-4 mb-5 border-b border-stone-200 gap-2">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-5 border-b border-stone-200 gap-3">
             <div>
                 <h2 class="font-serif text-xl font-bold text-ink-900">The Live Intelligence Wire</h2>
                 <p class="font-serif italic text-xs text-ink-500">Authentic press reports, statements, and citizen commentary</p>
             </div>
-            <span class="font-mono text-[11px] text-stone-500">
-                Displaying latest {{ recent_posts|length }} dispatches
-            </span>
+            <div class="flex items-center space-x-2 font-mono text-xs">
+                <span class="text-stone-500 hidden sm:inline">
+                    Displaying 25 of {{ total_posts }}
+                </span>
+                <a href="{% url 'tracker:dispatches' %}" class="px-3 py-1.5 rounded bg-stone-900 hover:bg-black text-white uppercase tracking-wider transition shadow-2xs flex items-center space-x-1.5 font-medium">
+                    <span>View All Dispatches ({{ total_posts }})</span>
+                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </a>
+            </div>
         </div>
 
         <!-- Wire Items List (Clean, Highly Readable Framing) -->
@@ -470,75 +476,18 @@
                 No reports matching the specified filter criteria.
             </div>
             {% endfor %}
+        <!-- Bottom Callout to All Dispatches -->
+        <div class="mt-6 p-4 rounded-lg bg-stone-50 border border-stone-200 flex flex-col sm:flex-row items-center justify-between gap-3 font-mono text-xs">
+            <div>
+                <span class="text-stone-800 font-bold block">Displaying latest 25 recorded dispatches.</span>
+                <span class="text-stone-500 text-[11px] block mt-0.5">There are {{ total_posts }} total verified dispatches available in the exhaustive intelligence archive with search and filters.</span>
+            </div>
+            <a href="{% url 'tracker:dispatches' %}" class="px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-semibold transition uppercase tracking-wider shrink-0 flex items-center space-x-1.5 shadow-2xs">
+                <span>Browse All Dispatches Wire</span>
+                <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </a>
         </div>
     </div>
-
-    <!-- Exact Post Inspector Modal (Paper Style) -->
-    <div id="exactPostModal" class="fixed inset-0 z-50 hidden bg-stone-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white border border-stone-300 rounded-lg max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative font-sans max-h-[90vh] overflow-y-auto">
-            <button onclick="closeExactPostModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-800 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            
-            <!-- Modal Header -->
-            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-stone-200">
-                <div class="flex items-center space-x-2 font-mono text-xs">
-                    <span id="modalPlatformBadge" class="px-2 py-0.5 rounded font-semibold text-[11px] bg-stone-900 text-white">X</span>
-                    <span id="modalAuthorName" class="font-bold text-stone-900">Author</span>
-                    <span class="text-stone-300">•</span>
-                    <span id="modalPublishedAt" class="text-stone-500">Date</span>
-                </div>
-                <span id="modalSentimentBadge" class="stamp-badge px-2.5 py-0.5 rounded">SENTIMENT</span>
-            </div>
-
-            <!-- Headline -->
-            <h2 id="modalHeadline" class="text-xl sm:text-2xl font-serif font-bold text-stone-900 leading-tight"></h2>
-
-            <!-- Candidate & State Banner -->
-            <div id="modalCandidateRow" class="mt-2 text-xs font-mono text-stone-600 hidden">
-                Candidate: <strong id="modalCandidateName" class="text-stone-900"></strong>
-            </div>
-
-            <!-- Exact Full Body -->
-            <div class="my-5 p-5 bg-stone-50 rounded border border-stone-200">
-                <span class="font-mono text-[10px] uppercase tracking-widest text-stone-400 block mb-1.5 font-semibold">Exact Recorded Dispatch:</span>
-                <p id="modalFullContent" class="text-sm sm:text-base text-stone-900 leading-relaxed font-sans whitespace-pre-line select-text"></p>
-            </div>
-
-            <!-- Sentiment Diagnostic Breakdown -->
-            <div class="grid grid-cols-4 gap-2 text-center font-mono text-xs mb-5">
-                <div class="p-2 bg-stone-50 rounded border border-stone-200">
-                    <span class="text-[10px] text-stone-400 block">POLARITY</span>
-                    <span id="modalScore" class="font-bold text-stone-900">0.00</span>
-                </div>
-                <div class="p-2 bg-sage-50 rounded border border-sage-200">
-                    <span class="text-[10px] text-sage-600 block">FAVORABLE</span>
-                    <span id="modalPos" class="font-bold text-sage-700">0%</span>
-                </div>
-                <div class="p-2 bg-stone-50 rounded border border-stone-200">
-                    <span class="text-[10px] text-slateink-600 block">NEUTRAL</span>
-                    <span id="modalNeu" class="font-bold text-slateink-700">0%</span>
-                </div>
-                <div class="p-2 bg-rust-50 rounded border border-rust-200">
-                    <span class="text-[10px] text-rust-600 block">CRITICAL</span>
-                    <span id="modalNeg" class="font-bold text-rust-700">0%</span>
-                </div>
-            </div>
-
-            <!-- Outbound Action Bar -->
-            <div class="pt-4 border-t border-stone-200 flex flex-wrap items-center justify-between gap-3 font-mono text-xs">
-                <a id="modalStandaloneLink" href="#" class="text-stone-700 hover:text-stone-900 underline flex items-center space-x-1">
-                    <span>Open Standalone Record</span>
-                    <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>
-                </a>
-                <a id="modalExternalLink" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center space-x-2 px-4 py-2 rounded bg-stone-900 hover:bg-black text-white font-mono text-xs uppercase tracking-wider transition shadow-sm">
-                    <span id="modalExternalBtnText">Open Live Source</span>
-                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-
 </div>
 {% endblock %}
 
@@ -811,79 +760,5 @@
             }
         });
     });
-
-    // 6. Exact Post Reader Modal Functions
-    const exactPostModal = document.getElementById('exactPostModal');
-
-    function closeExactPostModal() {
-        exactPostModal.classList.add('hidden');
-    }
-
-    // Close on clicking backdrop
-    exactPostModal?.addEventListener('click', function(e) {
-        if (e.target === exactPostModal) {
-            closeExactPostModal();
-        }
-    });
-
-    async function openExactPostModal(postId) {
-        try {
-            const resp = await fetch(`/api/post/${postId}/`);
-            if (!resp.ok) return;
-            const data = await resp.json();
-
-            // Populate fields
-            document.getElementById('modalPlatformBadge').innerText = data.platform;
-            document.getElementById('modalAuthorName').innerText = data.author_name;
-            document.getElementById('modalPublishedAt').innerText = data.published_at;
-            document.getElementById('modalHeadline').innerText = data.headline;
-            document.getElementById('modalFullContent').innerText = data.content;
-            document.getElementById('modalScore').innerText = (data.sentiment_score > 0 ? '+' : '') + data.sentiment_score.toFixed(2);
-            document.getElementById('modalPos').innerText = data.pos_score + '%';
-            document.getElementById('modalNeu').innerText = data.neu_score + '%';
-            document.getElementById('modalNeg').innerText = data.neg_score + '%';
-
-            // Sentiment Badge
-            const badge = document.getElementById('modalSentimentBadge');
-            badge.innerText = `${data.sentiment_label} (${data.sentiment_score.toFixed(2)})`;
-            if (data.sentiment_label === 'Positive') {
-                badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-sage-50 text-sage-700 border border-sage-300 font-semibold";
-            } else if (data.sentiment_label === 'Negative') {
-                badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-rust-50 text-rust-700 border border-rust-300 font-semibold";
-            } else {
-                badge.className = "stamp-badge px-2.5 py-0.5 rounded bg-slateink-50 text-slateink-700 border border-slateink-300 font-semibold";
-            }
-
-            // Candidate row
-            const candRow = document.getElementById('modalCandidateRow');
-            if (data.candidate_name) {
-                candRow.classList.remove('hidden');
-                document.getElementById('modalCandidateName').innerText = `${data.candidate_name} (${data.candidate_party || ''}) - ${data.state_name || ''} State`;
-            } else {
-                candRow.classList.add('hidden');
-            }
-
-            // Links
-            document.getElementById('modalStandaloneLink').href = `/post/${data.id}/`;
-            document.getElementById('modalPostId').innerText = data.id;
-
-            const extLink = document.getElementById('modalExternalLink');
-            const extText = document.getElementById('modalExternalBtnText');
-            extLink.href = data.working_url;
-            if (data.platform === 'X') {
-                extText.innerText = "View Live Stream on X";
-            } else if (data.platform === 'Facebook') {
-                extText.innerText = "View on Facebook";
-            } else if (data.platform === 'YouTube') {
-                extText.innerText = (data.working_url && data.working_url.includes('&lc=')) ? "View Comment on YouTube" : "Watch on YouTube";
-            } else {
-                extText.innerText = "Read Full Source Article";
-            }
-
-            exactPostModal.classList.remove('hidden');
-        } catch (err) {
-            console.error("Failed to load post details:", err);
-        }
-    }
 </script>
 {% endblock %}

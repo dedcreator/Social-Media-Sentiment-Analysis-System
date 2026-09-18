@@ -15,7 +15,26 @@ def get_vader():
                 from nltk.sentiment.vader import SentimentIntensityAnalyzer
                 _vader_analyzer = SentimentIntensityAnalyzer()
             except LookupError:
-                nltk.download('vader_lexicon', quiet=True)
+                # Fix for macOS / proxy environments where SSL certificate verification fails for NLTK
+                try:
+                    import ssl
+                    try:
+                        import certifi
+                        ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
+                    except Exception:
+                        ssl._create_default_https_context = ssl._create_unverified_context
+                except Exception:
+                    pass
+                try:
+                    nltk.download('vader_lexicon', quiet=True)
+                except Exception as dl_err:
+                    # Fallback to unverified SSL context if verified download failed
+                    try:
+                        import ssl
+                        ssl._create_default_https_context = ssl._create_unverified_context
+                        nltk.download('vader_lexicon', quiet=True)
+                    except Exception as fallback_err:
+                        logger.error(f"Failed to download NLTK vader_lexicon: {fallback_err}")
                 from nltk.sentiment.vader import SentimentIntensityAnalyzer
                 _vader_analyzer = SentimentIntensityAnalyzer()
         except Exception as e:

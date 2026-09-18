@@ -1,6 +1,7 @@
 import json
 import csv
 from datetime import timedelta
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
@@ -192,14 +193,158 @@ def test_sentiment_ajax(request):
     engine = data.get('engine', 'VADER')
 
     if not text:
-        return JsonResponse({'error': 'Please enter some text to analyze.'}, status=400)
+        return JsonResponse({'success': False, 'error': 'Please enter some text or select a sample excerpt to analyze.'}, status=400)
 
-    result = analyze_post_sentiment(text, engine=engine)
-    return JsonResponse({
-        'success': True,
-        'result': result,
-        'original_text': text
+    try:
+        result = analyze_post_sentiment(text, engine=engine)
+        collector = SocialMediaCollector()
+        cand, race = collector.match_candidate_and_race(text)
+
+        detected_entity = {
+            'candidate_id': cand.id if cand else None,
+            'candidate_name': cand.name if cand else None,
+            'candidate_party': cand.party if cand else None,
+            'candidate_color': cand.avatar_color if cand else None,
+            'state_name': race.state if race else None,
+        }
+
+        return JsonResponse({
+            'success': True,
+            'result': result,
+            'detected_entity': detected_entity,
+            'original_text': text
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f"Analysis failed: {str(e)}"}, status=500)
+
+
+def test_analyzer_view(request):
+    """Dedicated full-page Sentiment Polarity Laboratory & NLP tester."""
+    candidates_list = Candidate.objects.select_related('state_race').all()
+    sample_excerpts = [
+        ("Rhodes-Vivour's youth employment and transit infrastructure proposals will transform Lagos for good.", "Gbadebo Rhodes-Vivour (Lagos)", "VADER"),
+        ("The political feud between Sim Fubara and Nyesom Wike is crippling peace and governance in Rivers State.", "Sim Fubara / Wike (Rivers)", "VADER"),
+        ("INEC has confirmed registration dates for the 2027 gubernatorial and legislative elections.", "Neutral Regulatory Notice", "VADER"),
+        ("Abba Gida Gida has delivered massive educational reforms and renewed people's confidence in Kano State.", "Abba Kabir Yusuf (Kano)", "TRANSFORMERS"),
+        ("Severe economic hardship, inflation, and high cost of living will determine who votes in 2027.", "Citizen Grievance", "TRANSFORMERS"),
+        ("Senator Tokunbo Abiru commends grassroots leaders for unity and civic mobilization in Lagos East.", "Tokunbo Abiru (Lagos)", "VADER"),
+    ]
+    return render(request, 'tracker/test_analyzer.html', {
+        'candidates_list': candidates_list,
+        'sample_excerpts': sample_excerpts,
     })
+
+
+def dispatches_view(request):
+    """Paginated, searchable, multi-filtered archive of all dispatches and commentary."""
+    posts_qs = SocialPost.objects.select_related('candidate', 'state_race').all()
+
+    # Search keyword
+    q = request.GET.get('q', '').strip()
+    if q:
+        posts_qs = posts_qs.filter(
+            Q(content__icontains=q) |
+            Q(author_name__icontains=q) |
+            Q(author_handle__icontains=q)
+        )
+
+    # Filters
+    candidate_id = request.GET.get('candidate')
+    if candidate_id and candidate_id.isdigit():
+        posts_qs = posts_qs.filter(candidate_id=int(candidate_id))
+
+    state_id = request.GET.get('state')
+    if state_id and state_id.isdigit():
+        posts_qs = posts_qs.filter(state_race_id=int(state_id))
+
+    platform_filter = request.GET.get('platform')
+    if platform_filter and platform_filter in [p[0] for p in SocialPlatform.choices]:
+        posts_qs = posts_qs.filter(platform=platform_filter)
+
+    sentiment_filter = request.GET.get('sentiment')
+    if sentiment_filter and sentiment_filter in [s[0] for s in SentimentLabel.choices]:
+        posts_qs = posts_qs.filter(sentiment_label=sentiment_filter)
+
+    engine_filter = request.GET.get('engine')
+    if engine_filter:
+        posts_qs = posts_qs.filter(sentiment_engine__icontains=engine_filter)
+
+    days_param = request.GET.get('days')
+    if days_param and days_param != 'all':
+        try:
+            days_int = int(days_param)
+            start_date = timezone.now() - timedelta(days=days_int)
+            posts_qs = posts_qs.filter(published_at__gte=start_date)
+        except ValueError:
+            pass
+
+    # Sorting
+    sort = request.GET.get('sort', 'newest')
+    if sort == 'oldest':
+        posts_qs = posts_qs.order_by('published_at')
+    elif sort == 'sentiment_high':
+        posts_qs = posts_qs.order_by('-sentiment_score', '-published_at')
+    elif sort == 'sentiment_low':
+        posts_qs = posts_qs.order_by('sentiment_score', '-published_at')
+    elif sort == 'engagement':
+        posts_qs = posts_qs.order_by('-likes_count', '-published_at')
+    else:
+        posts_qs = posts_qs.order_by('-published_at')
+
+    total_count = posts_qs.count()
+
+    # Pagination
+    per_page = 25
+    paginator = Paginator(posts_qs, per_page)
+    page_number = request.GET.get('page', 1)
+    try:
+        page_obj = paginator.get_page(page_number)
+    except (PageNotAnInteger, EmptyPage):
+        page_obj = paginator.get_page(1)
+
+    # Query string for pagination links (excluding 'page')
+    params = request.GET.copy()
+    if 'page' in params:
+        del params['page']
+    query_string = params.urlencode()
+
+    candidates_list = Candidate.objects.select_related('state_race').all()
+    states_list = StateRace.objects.all()
+    platforms_list = SocialPlatform.choices
+
+    # Quick metrics for the current filtered slice
+    pos_count = posts_qs.filter(sentiment_label=SentimentLabel.POSITIVE).count()
+    neg_count = posts_qs.filter(sentiment_label=SentimentLabel.NEGATIVE).count()
+    neu_count = posts_qs.filter(sentiment_label=SentimentLabel.NEUTRAL).count()
+
+    pos_pct = round((pos_count / total_count * 100), 1) if total_count > 0 else 0
+    neg_pct = round((neg_count / total_count * 100), 1) if total_count > 0 else 0
+    neu_pct = round((neu_count / total_count * 100), 1) if total_count > 0 else 0
+
+    context = {
+        'page_obj': page_obj,
+        'total_count': total_count,
+        'pos_count': pos_count,
+        'neg_count': neg_count,
+        'neu_count': neu_count,
+        'pos_pct': pos_pct,
+        'neg_pct': neg_pct,
+        'neu_pct': neu_pct,
+        'candidates_list': candidates_list,
+        'states_list': states_list,
+        'platforms_list': platforms_list,
+        'q': q,
+        'selected_candidate': candidate_id or '',
+        'selected_state': state_id or '',
+        'selected_platform': platform_filter or '',
+        'selected_sentiment': sentiment_filter or '',
+        'selected_engine': engine_filter or '',
+        'selected_days': days_param or '',
+        'selected_sort': sort,
+        'query_string': query_string,
+    }
+    return render(request, 'tracker/dispatches.html', context)
+
 
 
 def candidate_detail_view(request, candidate_id):
