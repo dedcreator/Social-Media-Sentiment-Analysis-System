@@ -33,13 +33,18 @@ local_settings.py
 db.sqlite3-journal
 media/wordclouds/*.png
 
-# Environments
+# Environments and Secrets
+.env
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Scratch and Backup files
+page_*.png
+*_BACKUP.*
 
 # IDE files
 .vscode/

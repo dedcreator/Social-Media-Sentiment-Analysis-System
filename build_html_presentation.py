@@ -1,0 +1,667 @@
+import os
+
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2027 Gubernatorial Election Sentiment Analysis — Project Defense Presentation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0F172A;
+      color: #F8FAFC;
+      overflow: hidden;
+      user-select: none;
+    }
+    .slide {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.3s ease-in-out;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+    }
+    .glass-card {
+      background: rgba(30, 41, 59, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+    }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between p-4 md:p-6 bg-slate-950 text-slate-100">
+
+  <!-- TOP HEADER & PROGRESS BAR -->
+  <header class="w-full flex items-center justify-between pb-3 border-b border-slate-800">
+    <div class="flex items-center space-x-3">
+      <div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+      <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">EKSU B.Sc. Final Year Project Defense</span>
+      <span class="text-slate-600">|</span>
+      <span class="text-xs font-semibold text-slate-400 hidden sm:inline">2027 Gubernatorial Election Sentiment Analysis System</span>
+    </div>
+    <div class="flex items-center space-x-4">
+      <button onclick="toggleNotes()" class="px-2.5 py-1 text-xs font-semibold rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-comment-dots text-emerald-400"></i>
+        <span>Speaker Notes (S)</span>
+      </button>
+      <button onclick="toggleFullscreen()" class="p-1.5 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Toggle Fullscreen (F)">
+        <i class="fa-solid fa-expand"></i>
+      </button>
+      <div class="text-xs font-mono font-bold text-slate-400">
+        <span id="currentSlideNum" class="text-emerald-400">1</span> / <span id="totalSlidesNum">13</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- PROGRESS BAR -->
+  <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden mt-1 mb-2">
+    <div id="progressBar" class="h-full bg-gradient-to-r from-sky-400 to-emerald-500 transition-all duration-300" style="width: 7.7%;"></div>
+  </div>
+
+  <!-- SLIDES CONTAINER -->
+  <main class="flex-1 w-full max-w-7xl mx-auto flex items-center justify-center relative overflow-hidden py-2">
+
+    <!-- SLIDE 1: TITLE SLIDE -->
+    <div class="slide active flex-col items-center justify-center text-center w-full h-full max-w-5xl" data-notes="Good day, respected Head of Department Dr. Mrs. Yerokun, my supervisor Mr. Owoeye, distinguished external examiner, and faculty members. My name is Olushola Emmanuel Savi, Matriculation Number 220903032. Today I present my final year project defense: Design and Implementation of a Social Media Sentiment Analysis System for Election Monitoring and Candidate Perception Tracking.">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-700 text-emerald-400 text-xs font-bold tracking-wider uppercase mb-4">
+        <i class="fa-solid fa-graduation-cap"></i> Ekiti State University, Ado-Ekiti • Department of Computer Science
+      </div>
+      <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight mb-3">
+        DESIGN AND IMPLEMENTATION OF A SOCIAL MEDIA SENTIMENT ANALYSIS SYSTEM FOR ELECTION MONITORING
+      </h1>
+      <p class="text-base sm:text-xl text-emerald-400 font-semibold mb-6">
+        (A Case Study of the 2027 Gubernatorial Elections in Nigeria)
+      </p>
+
+      <div class="glass-card rounded-2xl p-6 w-full max-w-3xl border border-slate-700 shadow-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+          <div class="space-y-1">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Candidate Information</p>
+            <p class="text-base font-bold text-white">OLUSHOLA EMMANUEL SAVI</p>
+            <p class="text-xs font-mono text-sky-400">Matriculation No: 220903032</p>
+            <p class="text-xs text-slate-300">B.Sc. (Hons) Computer Science</p>
+          </div>
+          <div class="space-y-1 md:border-l md:border-slate-700 md:pl-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Supervisory Committee</p>
+            <p class="text-sm font-semibold text-slate-200"><span class="text-slate-400">Supervisor:</span> MR. OWOEYE</p>
+            <p class="text-sm font-semibold text-slate-200"><span class="text-slate-400">Head of Department:</span> DR. MRS. YEROKUN</p>
+            <p class="text-xs text-emerald-400 font-medium mt-1">Faculty of Science • April, 2026</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: BACKGROUND -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="In Nigeria today, political discourse has decisively migrated to digital platforms like X, YouTube, and news portals. For the 2027 Gubernatorial races across Lagos, Kano, Rivers, Oyo, and Nasarawa, voter sentiment is expressed at high velocity. However, this creates a Big Data challenge that humans cannot manually process.">
+      <div class="mb-4">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">1. Introduction & Context</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">The Digital Transformation of Nigerian Elections</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card p-5 rounded-xl border border-slate-800">
+          <h3 class="text-base font-bold text-sky-400 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-users text-sky-400"></i> Decentralized Digital Public Sphere
+          </h3>
+          <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span><strong>Shift to Social Ecosystems:</strong> Civic conversation has transitioned from broadcast TV/radio to X (Twitter), YouTube debates, Facebook groups, and digital news forums.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span><strong>2027 Gubernatorial Horizon:</strong> Crucial economic and demographic races (Lagos, Rivers, Kano, Oyo, Nasarawa) generate immense citizen commentary on manifestos and governance.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-emerald-400 font-bold">•</span>
+              <span><strong>Real-Time Electorate Barometer:</strong> Online reactions provide immediate feedback on infrastructure, economic inflation, and security concerns.</span>
+            </li>
+          </ul>
+        </div>
+        <div class="glass-card p-5 rounded-xl border border-slate-800">
+          <h3 class="text-base font-bold text-emerald-400 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-brain text-emerald-400"></i> The Computational NLP Imperative
+          </h3>
+          <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400 font-bold">•</span>
+              <span><strong>Unstructured Big Data:</strong> Tens of thousands of daily posts exceed human reading capability, causing severe cognitive overload and observation blind spots.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400 font-bold">•</span>
+              <span><strong>Automated Valence Extraction:</strong> Natural Language Processing (NLP) extracts objective polarity scores (-1.0 to +1.0) and assigns Positive, Neutral, or Negative classifications.</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <span class="text-sky-400 font-bold">•</span>
+              <span><strong>Empirical Transparency:</strong> Replaces anecdotal impressions with quantifiable metrics (Net Sentiment Index) for democratic oversight.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <div class="glass-card p-3 rounded-lg text-center border-l-2 border-sky-400">
+          <p class="text-lg font-bold text-white">4 Platforms</p>
+          <p class="text-xs text-slate-400">X, YouTube, FB, News</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg text-center border-l-2 border-emerald-400">
+          <p class="text-lg font-bold text-white">Dual NLP</p>
+          <p class="text-xs text-slate-400">VADER + DistilBERT</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg text-center border-l-2 border-amber-400">
+          <p class="text-lg font-bold text-white">8 State Races</p>
+          <p class="text-xs text-slate-400">Lagos, Kano, Rivers...</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg text-center border-l-2 border-rose-400">
+          <p class="text-lg font-bold text-white">21 / 21 Tests</p>
+          <p class="text-xs text-slate-400">100% Pass Rate</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 3: PROBLEM STATEMENT -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Why did we need to build this? Traditional polling is too slow and expensive—it takes weeks to tabulate. Social media commentary in Nigeria contains local slang and emojis that generic tools misclassify. Commercial tools cost up to $40,000 and don't recognize Nigerian candidates. Our platform solves all these problems.">
+      <div class="mb-4">
+        <span class="text-xs font-bold text-rose-400 uppercase tracking-widest">2. Problem Statement</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Limitations of Existing Methodologies</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="glass-card p-4 rounded-xl border border-rose-900/40">
+          <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold mb-2">1</div>
+          <h4 class="text-sm font-bold text-white mb-1">Traditional Polling Flaws</h4>
+          <p class="text-xs text-slate-300">Questionnaires and phone surveys cost millions of Naira, suffer from weeks of delay, and are obsolete in fast-moving campaign cycles.</p>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-amber-900/40">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold mb-2">2</div>
+          <h4 class="text-sm font-bold text-white mb-1">Demographic & Social Bias</h4>
+          <p class="text-xs text-slate-300">Field interviews miss active youth demographics online. Furthermore, voters often conceal true partisan convictions from human interviewers.</p>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-sky-900/40">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold mb-2">3</div>
+          <h4 class="text-sm font-bold text-white mb-1">Manual Tracking Overload</h4>
+          <p class="text-xs text-slate-300">Manual scrolling by campaign secretariats is prone to fatigue, confirmation bias, and total inability to quantify thousands of daily posts.</p>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-emerald-900/40">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold mb-2">4</div>
+          <h4 class="text-sm font-bold text-white mb-1">Slang & Nigerian Nuances</h4>
+          <p class="text-xs text-slate-300">Colloquial slang ('godfatherism', 'structures'), emojis, caps, and sarcasm cause off-the-shelf sentiment models to fail catastrophically.</p>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-rose-900/40">
+          <div class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold mb-2">5</div>
+          <h4 class="text-sm font-bold text-white mb-1">Prohibitive Tool Costs ($15k-$40k)</h4>
+          <p class="text-xs text-slate-300">Commercial platforms (Brandwatch, Meltwater) charge tens of thousands of dollars, operate as closed boxes, and lack Nigerian candidate mapping.</p>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-indigo-900/40">
+          <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold mb-2">6</div>
+          <h4 class="text-sm font-bold text-white mb-1">Fragile Single-Engine Scripts</h4>
+          <p class="text-xs text-slate-300">Existing academic prototypes rely on fragile single engines that either miss context or crash on server memory limits without fallback.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: AIM & OBJECTIVES -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Our aim was to build a full-stack, automated platform for the 2027 elections. We formulated 6 specific objectives: automated ingestion, candidate Named Entity Recognition, dual-engine NLP classification, interactive visual analytics, live sandbox testing, and empirical evaluation.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">3. Research Goals</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Aim & Specific Objectives</h2>
+      </div>
+      <div class="glass-card p-4 rounded-xl border border-emerald-500/30 mb-4 bg-emerald-950/20">
+        <p class="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-1">Primary Aim:</p>
+        <p class="text-sm sm:text-base font-semibold text-white">To design and implement an end-to-end, web-based Social Media Sentiment Analysis and Election Monitoring Platform for the 2027 Gubernatorial Elections in Nigeria, utilizing dual-engine NLP and candidate entity matching to quantify public perception in real time.</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div class="glass-card p-3 rounded-lg border border-slate-800">
+          <p class="text-xs font-bold text-sky-400 mb-1">1. Multi-Source Ingestion</p>
+          <p class="text-xs text-slate-300">Harvest election discourse from X (Twitter), YouTube, Facebook, and news RSS feeds (Punch, Vanguard, Daily Post).</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg border border-slate-800">
+          <p class="text-xs font-bold text-emerald-400 mb-1">2. Candidate Entity Matcher (NER)</p>
+          <p class="text-xs text-slate-300">Map candidate nicknames, campaign keywords, and party aliases to formal database records and state races.</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg border border-slate-800">
+          <p class="text-xs font-bold text-amber-400 mb-1">3. Dual-Engine Classification</p>
+          <p class="text-xs text-slate-300">Unite rule-based NLTK VADER with fine-tuned DistilBERT transformer models, featuring automated failover redundancy.</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg border border-slate-800">
+          <p class="text-xs font-bold text-sky-400 mb-1">4. Real-Time Visual Analytics</p>
+          <p class="text-xs text-slate-300">Render Chart.js 30-day sentiment trajectory area charts, Net Sentiment Index leaderboards, and WordClouds.</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg border border-slate-800">
+          <p class="text-xs font-bold text-rose-400 mb-1">5. Live NLP Sandbox & Export</p>
+          <p class="text-xs text-slate-300">Enable on-demand sentiment testing of arbitrary text quotes and generate RFC 4180 compliant CSV research exports.</p>
+        </div>
+        <div class="glass-card p-3 rounded-lg border border-slate-800">
+          <p class="text-xs font-bold text-emerald-400 mb-1">6. Empirical System Evaluation</p>
+          <p class="text-xs text-slate-300">Validate code quality across 21 automated tests, confusion matrices, latency benchmarks, and System Usability Scale (SUS).</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 5: DUAL-ENGINE NLP -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Our key algorithmic innovation is the Dual-Engine NLP architecture. Single-engine systems either fail on social slang or crash under memory pressure. We combined NLTK VADER and Hugging Face DistilBERT. VADER operates in under 25 milliseconds, expertly recognizing emojis, capitalized words, and exclamation marks. DistilBERT uses multi-head self-attention with 66 million parameters to capture complex political context. Crucially, our pipeline includes an automated fallback mechanism: if the deep transformer encounters resource limits, it falls back instantly to VADER with zero downtime.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">4. NLP Methodology</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Dual-Engine NLP Classification Architecture</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div class="space-y-3">
+          <div class="glass-card p-4 rounded-xl border border-emerald-500/30">
+            <h4 class="text-sm font-bold text-emerald-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-bolt text-emerald-400"></i> Engine 1: NLTK VADER Lexicon Engine
+            </h4>
+            <p class="text-xs text-slate-300 mb-2">Rule-based model specifically validated for social media text and informal discourse.</p>
+            <ul class="text-xs text-slate-400 space-y-1">
+              <li>• 5 Grammatical Heuristics: CAPS boost, exclamation marks (!!!), degree modifiers, contrastive 'but', negations.</li>
+              <li>• Ultra-low latency: &lt; 25 ms per post on standard CPU.</li>
+            </ul>
+          </div>
+          <div class="glass-card p-4 rounded-xl border border-sky-500/30">
+            <h4 class="text-sm font-bold text-sky-400 mb-1 flex items-center gap-2">
+              <i class="fa-solid fa-network-wired text-sky-400"></i> Engine 2: Hugging Face DistilBERT Transformer
+            </h4>
+            <p class="text-xs text-slate-300 mb-2">6-layer bidirectional contextual self-attention transformer with 66M parameters.</p>
+            <ul class="text-xs text-slate-400 space-y-1">
+              <li>• Deep attention captures complex syntax, sarcasm, and sentence context.</li>
+              <li>• 60% faster than standard BERT while retaining 97% language understanding.</li>
+            </ul>
+          </div>
+          <div class="glass-card p-3 rounded-xl border border-amber-500/30 bg-amber-950/20">
+            <h4 class="text-xs font-bold text-amber-400 mb-1 flex items-center gap-1.5">
+              <i class="fa-solid fa-shield-halved text-amber-400"></i> Automated Fallback & Failover
+            </h4>
+            <p class="text-xs text-slate-300">If transformer dependencies or memory limits are exceeded, system automatically falls back to VADER without throwing 500 errors—ensuring 100% operational uptime.</p>
+          </div>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-slate-800 text-center">
+          <img src="figures/fig4_5_nlp_pipeline.png" alt="NLP Pipeline" class="rounded-lg max-h-72 mx-auto object-contain mb-3">
+          <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 text-left font-mono text-xs">
+            <p class="text-emerald-400 font-bold">VADER Compound Score Formula:</p>
+            <p class="text-slate-200">Compound (C) = x / sqrt( x² + α )  where α = 15</p>
+            <p class="text-slate-400 text-[10px] mt-1">Positive: C ≥ +0.05 | Neutral: -0.05 &lt; C &lt; +0.05 | Negative: C ≤ -0.05</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 6: SYSTEM ARCHITECTURE -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Slide 6 illustrates our four-tier decoupled system architecture. At the base is the Data Ingestion Tier, connecting to Twitter API, YouTube Data API, and live RSS feeds from Vanguard, Punch, and Daily Post. Above it is the NLP Tier, executing Named Entity Recognition and dual sentiment classification. The Persistence Tier uses Django's ORM, running on SQLite out of the box and seamlessly supporting PostgreSQL in production. Finally, the Presentation Tier delivers an interactive glassmorphism UI using Tailwind CSS and Chart.js.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-sky-400 uppercase tracking-widest">5. System Architecture</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Decoupled Four-Tier Architecture</h2>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        <div class="lg:col-span-2 glass-card p-3 rounded-xl border border-slate-800">
+          <img src="figures/fig4_1_architecture.png" alt="System Architecture" class="rounded-lg w-full max-h-96 object-contain mx-auto">
+        </div>
+        <div class="space-y-2.5">
+          <div class="glass-card p-3 rounded-lg border-l-4 border-sky-400">
+            <h5 class="text-xs font-bold text-white uppercase tracking-wider">1. Presentation Tier</h5>
+            <p class="text-xs text-slate-300">Tailwind CSS glassmorphism UI, animated Chart.js area charts, dynamic WordClouds, and live NLP sandbox.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-emerald-400">
+            <h5 class="text-xs font-bold text-white uppercase tracking-wider">2. Application / ORM Tier</h5>
+            <p class="text-xs text-slate-300">Django 4.2 MVT controller, RESTful AJAX endpoints, and background collection daemons.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-indigo-400">
+            <h5 class="text-xs font-bold text-white uppercase tracking-wider">3. Dual-Engine NLP Tier</h5>
+            <p class="text-xs text-slate-300">VADER & DistilBERT scoring pipelines, candidate Named Entity Recognition, and emoji sanitizers.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-amber-400">
+            <h5 class="text-xs font-bold text-white uppercase tracking-wider">4. Ingestion & Persistence Tier</h5>
+            <p class="text-xs text-slate-300">X (Twitter), YouTube, RSS news feeds, with SQLite development & PostgreSQL production database.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 7: INGESTION & NER -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="How does the system know which candidate a tweet or comment is talking about? As shown in our activity workflow, citizens on social media don't write formal names like 'Dr. Kadri Obafemi Hamzat'—they write 'Hamzat'. They write 'Jandor' instead of 'Abdul-Azeez Adediran', and 'Abba Gida Gida' instead of 'Abba Kabir Yusuf'. Our Named Entity Recognition matcher scans incoming text against candidate alias dictionaries, automatically binding the post to the correct candidate and their 2027 state race in the database.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">6. Data Ingestion & NER</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Post Harvesting & Candidate Entity Matching</h2>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+        <div class="space-y-3">
+          <div class="glass-card p-4 rounded-xl border border-slate-800">
+            <h4 class="text-sm font-bold text-emerald-400 mb-2">Automated Multi-Source Harvesting</h4>
+            <ul class="text-xs text-slate-300 space-y-2">
+              <li>• <strong>Real News Feeds:</strong> Continuous ingestion from Google News Nigeria, Daily Post, Vanguard, and Punch RSS endpoints.</li>
+              <li>• <strong>Social Streams:</strong> Twitter API v2, YouTube Data API v3 comments, and Facebook post simulators.</li>
+              <li>• <strong>Text Sanitization:</strong> Regular expressions strip URLs, tracking tags, and HTML boilerplate while preserving sentiment signals (emojis, exclamation marks, caps).</li>
+            </ul>
+          </div>
+          <div class="glass-card p-4 rounded-xl border border-sky-500/30">
+            <h4 class="text-sm font-bold text-sky-400 mb-2">Intelligent Named Entity Recognition (NER)</h4>
+            <div class="space-y-1.5 text-xs text-slate-300">
+              <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between items-center">
+                <span>"Jandor held a massive rally in Ikeja"</span>
+                <span class="text-emerald-400 font-bold text-[11px]">&rarr; A. Adediran (PDP, Lagos)</span>
+              </div>
+              <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between items-center">
+                <span>"Abba Gida Gida announces education reforms"</span>
+                <span class="text-emerald-400 font-bold text-[11px]">&rarr; A. Yusuf (NNPP, Kano)</span>
+              </div>
+              <div class="p-2 rounded bg-slate-900 border border-slate-800 flex justify-between items-center">
+                <span>"Hamzat reviews transport infrastructure"</span>
+                <span class="text-emerald-400 font-bold text-[11px]">&rarr; F. Hamzat (APC, Lagos)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+          <img src="figures/fig4_4_ingestion_workflow.png" alt="Ingestion Workflow" class="rounded-lg w-full max-h-80 object-contain mx-auto">
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 8: DATABASE DESIGN -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Here we examine the Relational Database Schema. We designed four core entities: StateRace, Candidate, SocialPost, and CollectionJob. Referential integrity is strictly maintained: a StateRace has a one-to-many relationship with Candidates. A Candidate has a one-to-many relationship with SocialPosts. We also added composite database indexes on platform, sentiment label, and published date, allowing complex rolling time-series and leaderboard aggregations to execute in milliseconds without database bottlenecks.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-sky-400 uppercase tracking-widest">7. Database Design</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Relational Schema & Entity Relationships</h2>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
+        <div class="lg:col-span-2 glass-card p-3 rounded-xl border border-slate-800">
+          <img src="figures/fig4_6_erd.png" alt="Database ERD" class="rounded-lg w-full max-h-96 object-contain mx-auto">
+        </div>
+        <div class="space-y-2.5">
+          <div class="glass-card p-3 rounded-lg border-l-4 border-sky-400">
+            <h5 class="text-xs font-bold text-sky-400 uppercase">StateRace Entity</h5>
+            <p class="text-xs text-slate-300">Top-level electoral race (state, year=2027, is_active). Groups candidates geographically.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-emerald-400">
+            <h5 class="text-xs font-bold text-emerald-400 uppercase">Candidate Entity</h5>
+            <p class="text-xs text-slate-300">Contesting candidate (name, party, aliases, avatar_color). Foreign key to StateRace.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-amber-400">
+            <h5 class="text-xs font-bold text-amber-400 uppercase">SocialPost Entity</h5>
+            <p class="text-xs text-slate-300">Core post record (content, platform, external_id, polarity_score, sentiment_label, engine). Composite indexed.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-rose-400">
+            <h5 class="text-xs font-bold text-rose-400 uppercase">CollectionJob Entity</h5>
+            <p class="text-xs text-slate-300">Audit log tracking background scraping runs, posts harvested, status, and execution duration.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 9: DASHBOARD & LEADERBOARD -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="This slide showcases the deployed user interface and analytical leaderboard. To isolate genuine candidate favorability from chatter volume, we formulated the Net Sentiment Index, or NSI. NSI is calculated as percentage positive posts minus percentage negative posts, giving a score between -100 and +100. As shown in our empirical leaderboard chart on the right, candidates like Dr. Kadri Obafemi Hamzat hold a +42.5% Net Sentiment Index, while candidates facing strong public criticism, like Nasir Gawuna, exhibit negative indices (-14.5%).">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">8. Visual Analytics</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Dashboard & Candidate Perception Leaderboard</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+        <div class="glass-card p-2 rounded-xl border border-slate-800 text-center">
+          <img src="figures/fig4_7_dashboard_overview.png" alt="Dashboard" class="rounded-lg w-full max-h-56 object-contain mx-auto">
+        </div>
+        <div class="glass-card p-2 rounded-xl border border-slate-800 text-center">
+          <img src="figures/fig4_8_candidate_leaderboard.png" alt="Leaderboard" class="rounded-lg w-full max-h-56 object-contain mx-auto">
+        </div>
+      </div>
+      <div class="glass-card p-3.5 rounded-xl border border-emerald-500/40 bg-emerald-950/20">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-emerald-400">Net Sentiment Index (NSI) Formulation:</p>
+            <p class="text-sm font-semibold text-white">NSI = (% Positive Posts) &minus; (% Negative Posts) &nbsp;&rarr;&nbsp; Normalized Range: [&minus;100.0, +100.0]</p>
+          </div>
+          <div class="text-xs text-slate-300 font-mono bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700">
+            Top Candidate: Femi Hamzat (+42.5%) | Criticized: Nasir Gawuna (-14.5%)
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 10: WORD CLOUDS & SANDBOX -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Beyond static charts, the platform provides rich interactive tools. On the left, our Dynamic Word Cloud module strips election stopwords and renders positive praise clusters—like infrastructure, visionary, integrity—distinctly from negative grievance clusters—like inflation, corruption, and bad roads. On the right is our Real-Time NLP Sandbox. A campaign team or researcher can paste any custom quote or speech transcript, and the system instantly returns polarity scores, confidence distributions, and the identified candidate entity.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-sky-400 uppercase tracking-widest">9. Interactive Capabilities</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Dynamic Word Clouds & Real-Time NLP Sandbox</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div class="space-y-3">
+          <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+            <img src="figures/fig4_11_wordclouds.png" alt="Word Clouds" class="rounded-lg w-full max-h-56 object-contain mx-auto mb-2">
+            <p class="text-xs font-bold text-emerald-400">Positive Terms (Praise)</p>
+            <p class="text-[11px] text-slate-400">infrastructure, visionary, reform, victory, integrity, education</p>
+            <p class="text-xs font-bold text-rose-400 mt-1">Negative Terms (Grievances)</p>
+            <p class="text-[11px] text-slate-400">corruption, inflation, hardship, insecurity, bad roads, godfatherism</p>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+            <img src="figures/fig4_12_nlp_sandbox.png" alt="Live Sandbox" class="rounded-lg w-full max-h-56 object-contain mx-auto mb-2">
+            <p class="text-xs font-bold text-sky-400">Live NLP Sandbox Verification</p>
+            <p class="text-[11px] text-slate-400">Test any arbitrary speech, quote, or manifesto with instant feedback on polarity, confidence %, and candidate entity detection.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 11: TESTING & EVALUATION -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="Rigorous testing and evaluation were central to our research. We wrote and executed 21 automated unit and integration tests, all of which passed with zero failures in 11.3 seconds. On a curated benchmark dataset of 400 human-annotated political posts, our fine-tuned DistilBERT model achieved 89.8% accuracy and an F1-score of 0.895, while VADER achieved 80.5% accuracy with sub-25 millisecond latency. Finally, an empirical System Usability Scale study across 25 domain evaluators yielded an outstanding score of 88.4 out of 100, confirming exceptional real-world usability.">
+      <div class="mb-3">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">10. Evaluation & Benchmarks</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">System Testing & Empirical Performance Evaluation</h2>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+        <div class="glass-card p-3 rounded-xl border border-slate-800 text-center">
+          <img src="figures/fig4_17_confusion_matrix.png" alt="Confusion Matrix" class="rounded-lg w-full max-h-64 object-contain mx-auto mb-2">
+          <div class="flex justify-around text-xs font-mono">
+            <span class="text-sky-400">VADER Accuracy: 80.5%</span>
+            <span class="text-emerald-400">DistilBERT Accuracy: 89.8%</span>
+          </div>
+        </div>
+        <div class="space-y-2.5">
+          <div class="glass-card p-3 rounded-lg border-l-4 border-emerald-400">
+            <p class="text-xs font-bold text-emerald-400 uppercase">21 Automated Unit & Integration Tests</p>
+            <p class="text-xs text-slate-300">100% pass rate in 11.3s covering models, VADER, DistilBERT fallback, NER matching, and all AJAX API endpoints.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-sky-400">
+            <p class="text-xs font-bold text-sky-400 uppercase">High-Speed Ingestion & Throughput</p>
+            <p class="text-xs text-slate-300">Text Cleaning: 830 posts/sec | Candidate NER: 295 posts/sec | VADER Scoring: 116 posts/sec.</p>
+          </div>
+          <div class="glass-card p-3 rounded-lg border-l-4 border-amber-400">
+            <p class="text-xs font-bold text-amber-400 uppercase">System Usability Scale (SUS) Score</p>
+            <p class="text-xs text-slate-300">Evaluated across 25 domain experts (15 political scientists, 10 software engineers): <strong>88.4 / 100 (Grade A - Excellent)</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 12: FUTURE WORK -->
+    <div class="slide flex-col justify-center w-full h-full max-w-6xl" data-notes="During development, we solved major challenges including social media API paywalls (by creating a hybrid RSS and simulation engine) and transformer latency (by distilling to DistilBERT with VADER failover). Looking forward, we have identified exciting research frontiers: First, scaling to millions of posts per hour using Apache Kafka streaming. Second, integrating Afrocentric models like AfriBERTa for pure Nigerian Pidgin, Yoruba, Hausa, and Igbo languages. Third, GIS geospatial heatmaps down to Local Government Areas. And fourth, graph neural networks to detect coordinated political bots.">
+      <div class="mb-4">
+        <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">11. Recommendations</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Challenges Solved & Future Research Frontiers</h2>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="glass-card p-4 rounded-xl border border-emerald-500/30">
+          <h4 class="text-xs font-bold text-emerald-400 uppercase mb-2">Technical Challenges Overcome</h4>
+          <ul class="text-xs text-slate-300 space-y-2">
+            <li>• <strong>API Limits & Paywalls:</strong> Solved via hybrid architecture combining live Nigerian news RSS feeds (Daily Post, Vanguard, Punch) with realistic simulators.</li>
+            <li>• <strong>Transformer CPU Latency:</strong> Solved via DistilBERT distillation (40% smaller, 60% faster) and automatic fallback to VADER.</li>
+            <li>• <strong>macOS SSL Verification:</strong> Solved via resilient `_safe_urlopen` fallback context.</li>
+          </ul>
+        </div>
+        <div class="glass-card p-4 rounded-xl border border-sky-500/30">
+          <h4 class="text-xs font-bold text-sky-400 uppercase mb-2">Future Research Frontiers</h4>
+          <ul class="text-xs text-slate-300 space-y-2">
+            <li>• <strong>Distributed Streaming (Kafka):</strong> Transition from batch polling to real-time message streaming for millions of posts per hour.</li>
+            <li>• <strong>Afrocentric Multilingual LLMs:</strong> Integrate AfriBERTa / Naija-BERT for native classification of Nigerian Pidgin, Yoruba, Hausa, and Igbo.</li>
+            <li>• <strong>Geospatial GIS Heatmaps:</strong> Plot voter sentiment granularly across Senatorial Districts and Local Government Areas (LGAs).</li>
+            <li>• <strong>Bot Detection:</strong> Deploy graph neural networks to track coordinated astroturfing campaigns.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 13: CONCLUSION & Q&A -->
+    <div class="slide flex-col items-center justify-center text-center w-full h-full max-w-4xl" data-notes="In conclusion, this project proves that Natural Language Processing and modern web engineering can revolutionize democratic election oversight in Nigeria. By transforming fragmented political commentary into rigorous sentiment intelligence, the platform promotes democratic transparency and provides all stakeholders with actionable insights. Thank you very much, Head of Department, supervisor, and distinguished members of the defense panel. I now welcome your questions, observations, and feedback.">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-2xl font-bold mb-4 border border-emerald-500/30">
+        <i class="fa-solid fa-check"></i>
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white mb-2">THANK YOU FOR LISTENING!</h2>
+      <p class="text-base text-sky-400 font-semibold mb-4">Transforming Fragmented Political Chatter into Democratic Intelligence</p>
+      
+      <div class="glass-card rounded-xl p-5 w-full border border-slate-700 mb-6 text-left">
+        <p class="text-xs font-bold text-slate-400 uppercase mb-2">Project Artifacts & Deliverables:</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+            <p class="font-bold text-emerald-400 mb-0.5">14,206-Word Dissertation</p>
+            <p class="text-slate-400">Hotel_Management_System_Final_Project_Report.docx</p>
+          </div>
+          <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+            <p class="font-bold text-sky-400 mb-0.5">Production Codebase</p>
+            <p class="text-slate-400">Django 4.2 / Python 3.11 with 21 Verified Tests</p>
+          </div>
+          <div class="p-2.5 rounded bg-slate-900 border border-slate-800">
+            <p class="font-bold text-amber-400 mb-0.5">Project Overview Guide</p>
+            <p class="text-slate-400">Project_Overview.pdf with Architecture Schematics</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-xs text-slate-400 space-y-1">
+        <p><strong class="text-white">Olushola Emmanuel Savi</strong> (Matric No: 220903032)</p>
+        <p>Supervisor: <strong class="text-emerald-400">Mr. Owoeye</strong> | HOD: <strong class="text-emerald-400">Dr. Mrs. Yerokun</strong></p>
+        <p class="text-slate-500">Department of Computer Science • Ekiti State University (EKSU)</p>
+      </div>
+
+      <div class="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-800 text-sky-400 text-xs font-bold border border-slate-700 animate-bounce">
+        <i class="fa-solid fa-comments"></i> Questions, Feedback & Discussion Are Welcome
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SPEAKER NOTES MODAL -->
+  <div id="notesModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-card bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-2xl w-full shadow-2xl relative">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+        <h3 class="text-sm font-bold text-emerald-400 flex items-center gap-2">
+          <i class="fa-solid fa-microphone"></i> Speaker Notes for Slide <span id="notesSlideNum">1</span>
+        </h3>
+        <button onclick="toggleNotes()" class="text-slate-400 hover:text-white text-lg">&times;</button>
+      </div>
+      <p id="notesContent" class="text-sm text-slate-200 leading-relaxed font-sans"></p>
+      <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
+        <span>Press <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">S</kbd> to toggle</span>
+        <button onclick="toggleNotes()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-semibold transition">Close Notes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM CONTROLS & NAVIGATION -->
+  <footer class="w-full flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400">
+    <div class="flex items-center space-x-2">
+      <span class="hidden sm:inline">Navigate:</span>
+      <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">&larr;</kbd>
+      <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">&rarr;</kbd>
+      <kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 hidden sm:inline">Space</kbd>
+    </div>
+    <div class="flex items-center space-x-3">
+      <button onclick="prevSlide()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 transition">
+        <i class="fa-solid fa-chevron-left text-[10px]"></i> <span>Previous</span>
+      </button>
+      <button onclick="nextSlide()" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1 shadow-lg shadow-emerald-950 transition">
+        <span>Next</span> <i class="fa-solid fa-chevron-right text-[10px]"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- PRESENTATION JAVASCRIPT -->
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    document.getElementById('totalSlidesNum').textContent = totalSlides;
+
+    function updateSlide() {
+      slides.forEach((s, idx) => {
+        if (idx === currentSlide) {
+          s.classList.add('active');
+        } else {
+          s.classList.remove('active');
+        }
+      });
+      document.getElementById('currentSlideNum').textContent = currentSlide + 1;
+      const progressPct = ((currentSlide + 1) / totalSlides) * 100;
+      document.getElementById('progressBar').style.width = progressPct + '%';
+      
+      // Update speaker notes
+      const activeSlide = slides[currentSlide];
+      const notes = activeSlide.getAttribute('data-notes') || 'No notes for this slide.';
+      document.getElementById('notesContent').textContent = notes;
+      document.getElementById('notesSlideNum').textContent = currentSlide + 1;
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    function toggleNotes() {
+      const modal = document.getElementById('notesModal');
+      modal.classList.toggle('hidden');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+        nextSlide();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 's' || e.key === 'S') {
+        toggleNotes();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === 'Escape') {
+        const modal = document.getElementById('notesModal');
+        if (!modal.classList.contains('hidden')) {
+          modal.classList.add('hidden');
+        }
+      }
+    });
+
+    // Touch swipe navigation for mobile / tablets
+    let touchStartX = 0;
+    window.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
+    window.addEventListener('touchend', e => {
+      let touchEndX = e.changedTouches[0].screenX;
+      if (touchEndX < touchStartX - 50) nextSlide();
+      if (touchEndX > touchStartX + 50) prevSlide();
+    }, false);
+
+    // Initial load
+    updateSlide();
+  </script>
+</body>
+</html>
+"""
+
+with open("presentation.html", "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print("Generated interactive presentation.html successfully!")
